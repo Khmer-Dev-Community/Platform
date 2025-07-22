@@ -1,27 +1,61 @@
 <template>
-  <a
-    href="#"
-    class="flex items-center space-x-5 pl-5 hover:text-gray-900 relative rounded-md"
-    :class="item.active ? 'text-gray-900 bg-gray-100 rounded-md px-3 py-2 font-normal' : ''"
+  <router-link
+    :to="item.route"
+    :class="[
+      'flex items-center space-x-1 p-2 rounded-lg transition-colors duration-200',
+      'hover:bg-purple-100 hover:text-purple-700',
+      'dark:hover:bg-gray-600 dark:hover:text-purple-400',
+      {
+        'bg-purple-100 text-purple-700 dark:bg-purple-700 dark:text-white font-semibold': isActive,
+      },
+    ]"
+    @click="activateItem"
   >
-    <i :class="item.icon + ' text-lg w-5'"></i>
-    <span>{{ item.text }}</span>
+    <i :class="item.icon" class="w-5 h-5 text-md"></i>
+
+    <span class="text-base">{{ item.text }}</span>
     <span
       v-if="item.badge"
-      class="absolute right-0 top-0 -translate-x-1/2 translate-y-1/2 bg-purple-200 text-purple-700 text-xs font-semibold rounded-full px-2"
-      >{{ item.badge }}</span
+      class="ml-auto px-1 py-0.5 text-xs font-semibold bg-purple-200 text-purple-800 rounded-full dark:bg-purple-900 dark:text-purple-200"
     >
-  </a>
+      {{ item.badge }}
+    </span>
+  </router-link>
 </template>
 
 <script setup>
-defineProps({
+import { defineProps, computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const props = defineProps({
   item: {
     type: Object,
     required: true,
-    validator: (value) => {
-      return 'text' in value && 'icon' in value
-    },
+    // Add more detailed prop validation if needed
+    default: () => ({
+      text: 'Default Item',
+      icon: 'fas fa-question-circle',
+      route: '/',
+      badge: null,
+    }),
   },
 })
+
+const route = useRoute()
+
+const isActive = computed(() => {
+  if (typeof props.item.route === 'object' && props.item.route.name) {
+    return route.name === props.item.route.name
+  }
+  // Fallback to path matching if route is a string path
+  if (typeof props.item.route === 'string') {
+    // For exact match:
+    return route.path === props.item.route
+  }
+  return false
+})
+
+const activateItem = () => {}
 </script>
+
+<style scoped></style>
