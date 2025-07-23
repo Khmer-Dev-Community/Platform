@@ -61,6 +61,7 @@
             Continue with Google
           </button>
           <button
+            @click="handleGithubLogin"
             class="w-full flex items-center justify-center px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm"
           >
             <i class="fab fa-github w-5 h-5 mr-3"></i>
@@ -120,20 +121,31 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/module/users'
+
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false) // Reactive state to toggle password visibility
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/module/users'
+
 const userStore = useUserStore()
 const router = useRouter()
+
+const API_BASE_URL = 'http://localhost:3000' // IMPORTANT: Set your backend API base URL here
+
 const toggleShowPassword = () => {
   showPassword.value = !showPassword.value
 }
+
 onMounted(async () => {
+  // This is crucial: When the component mounts (e.g., after GitHub redirects back),
+  // check if the user is now logged in. The backend should have set
+  // the necessary session/token (e.g., via cookies).
   await userStore.loadUserAndToken()
   if (userStore.isLogged) {
     console.log('User is logged in:', userStore.userData?.name)
+    // If the user is logged in, perhaps redirect them to a dashboard
+    router.push('/') // Or '/dashboard' if you have one
   } else {
     console.log('User is not logged in.')
   }
@@ -142,39 +154,48 @@ onMounted(async () => {
 const handleLogin = async () => {
   console.log('Attempting login with:', {
     email: email.value,
-    password: password.value, // In a real app, never log raw password
+    // password: password.value, // Never log raw password in production
   })
-  const fakeUserData = { id: 'abc-123', name: 'John Doe', email: 'john.doe@example.com' }
-  const fakeToken = 'some-jwt-token-abcd123'
-  await userStore.setUser(fakeUserData)
-  await userStore.setToken(fakeToken)
-  await userStore.setIsLogged(true) // Set isLogged explicitly or let loadUserAndToken derive it
-  console.log('Logged in!', userStore.userData)
-  router.push('/')
-  //alert('Login attempted! (Check console for data)')
 
-  // Example redirection after successful login (uncomment if using vue-router)
-  // try {
-  //   const response = await fetch('/api/login', {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({ email: email.value, password: password.value })
-  //   });
-  //   const data = await response.json();
-  //   if (response.ok) {
-  //     // Store token, user info etc.
-  //     router.push('/dashboard'); // Redirect to dashboard
-  //   } else {
-  //     alert(data.message || 'Login failed!');
-  //   }
-  // } catch (error) {
-  //   console.error('Login error:', error);
-  //   alert('An error occurred during login.');
-  // }
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/account/auth02/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: email.value, password: password.value }),
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      // Assuming your backend sends back { token: "...", user: { ... } }
+      await userStore.setToken(data.token)
+      await userStore.setUser(data.user)
+      await userStore.setIsLogged(true) // Explicitly set logged status
+      console.log('Login successful!', userStore.userData)
+      router.push('/') // Redirect to homepage or dashboard
+    } else {
+      console.error('Login failed:', data.message || 'Unknown error')
+      alert(data.message || 'Login failed! Please check your credentials.')
+    }
+  } catch (error) {
+    console.error('Login error:', error)
+    alert('An error occurred during login. Please try again.')
+  }
 }
+
+// New method for GitHub Login
+const handleGithubLogin = () => {
+  console.log('Initiating GitHub login...')
+  // Redirect the user to your backend's GitHub login endpoint
+  // Your backend will then redirect to GitHub's authorization page
+  window.location.href = `${API_BASE_URL}/api/account/auth02/github/login`
+}
+
 const logout = async () => {
   await userStore.clearUser()
   console.log('Logged out!')
+  // Optionally redirect to login page after logout
+  router.push('/login')
 }
 </script>
 

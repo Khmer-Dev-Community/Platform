@@ -8,23 +8,29 @@
         <div class="flex-shrink-0">
           <h1 class="text-lg font-bold">
             <router-link to="/">
-              <img src="@/assets/logo.svg" width="60" class="mt-0" />
+              <img src="@/assets/kdc.png" width="160" class="mt-1" />
             </router-link>
           </h1>
         </div>
 
         <div class="flex-1 max-w-lg mx-auto">
           <div class="relative text-gray-500">
-            <input
+            <div
               @click="$emit('open-search-dialog')"
               aria-label="Search for topics and discussions"
-              class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-900 h-[35px] py-2 pl-10 pr-2 text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              :placeholder="$t('input.search')"
-              type="search"
-            />
-            <span class="absolute left-3 top-1/2 -translate-y-1/3 text-gray-400">
-              <el-icon><Search /></el-icon>
-            </span>
+              class="relative flex items-center w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-900 h-[35px] py-2 pl-3 pr-2 text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer"
+            >
+              <span class="text-gray-400 mr-2">
+                <el-icon><Search /></el-icon>
+              </span>
+              <span class="text-gray-500 dark:text-gray-400 flex-1 text-sm">{{
+                $t('input.search')
+              }}</span>
+              <span class="flex items-center space-x-1 text-gray-400 text-xs">
+                <kbd class="kbd kbd-sm bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded">⌘</kbd>
+                <kbd class="kbd kbd-sm bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded">K</kbd>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -313,7 +319,7 @@ export default {
     const unreadMessagesCount = ref(0) // Placeholder for unread count
 
     const languages = [
-      { name: 'English', code: 'en' },
+      { name: 'En', code: 'en' },
       { name: 'ខ្មែរ', code: 'km' },
     ]
 
