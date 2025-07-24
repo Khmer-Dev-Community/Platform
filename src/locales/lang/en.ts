@@ -48,7 +48,8 @@ export default {
     humanResouce: 'Human Resouce',
     employee: 'Employee',
     about: 'About',
-
+    login: 'Login',
+    signup: 'SignUp',
     size: 'Size',
     path: 'Path',
     type: 'Type',

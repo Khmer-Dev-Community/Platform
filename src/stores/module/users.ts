@@ -1,85 +1,144 @@
+// src/stores/module/users.ts
 import { defineStore } from 'pinia'
-import { Storage } from '@capacitor/storage'
+import { Storage } from '@capacitor/storage' // Still useful for general user data, not the auth token
 
-// 1. Define the interface for the User Data
-interface UserData {
-  id: string // Assuming a user ID
-  name: string
+export interface UserData {
+  id: number // Changed to number based on your previous JSON example
+  fname: string
+  lname: string
+  username: string
   email: string
-  // Add other user properties as needed
-  [key: string]: any // Allow for flexible additional properties
+  phone: string
+  sex: string
+  status: boolean
+  description: string
+  github_id: string // From GitHub OAuth
+  avatar_url: string // From GitHub OAuth
+  name: string // User's full name from backend
+  createdAt: string
+  updatedAt: string
+  [key: string]: any
 }
 
-// 2. Define the interface for the Store's State
 interface UserState {
   isLogged: boolean
-  userData: UserData | null // userData can be UserData type or null
-  token: string | null // token can be string or null
+  userData: UserData | null
+  loadingUser: boolean // Add a loading state for user data
 }
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     isLogged: false,
     userData: null,
-    token: null,
+    loadingUser: false, // Initialize loading state
   }),
   actions: {
     async setIsLogged(value: boolean): Promise<void> {
       this.isLogged = value
-      // Save login state to local storage
       await Storage.set({ key: 'islogged', value: String(value) })
     },
-    async loadLoginState(): Promise<void> {
-      const { value } = await Storage.get({ key: 'islogged' })
-      this.isLogged = value === 'true' // Convert string to boolean
-    },
+
     async setUser(data: UserData | null): Promise<void> {
       this.userData = data
-      // Save user data to local storage if needed
       if (data) {
         await Storage.set({ key: 'userData', value: JSON.stringify(data) })
       } else {
-        await Storage.remove({ key: 'userData' }) // Clear if data is null
+        await Storage.remove({ key: 'userData' })
       }
     },
-    async setToken(token: string | null): Promise<void> {
-      this.token = token
-      // You might want to save the token to storage here as well
-      if (token) {
-        await Storage.set({ key: 'authToken', value: token })
-      } else {
-        await Storage.remove({ key: 'authToken' })
-      }
-    },
+
     async loadUserAndToken(): Promise<void> {
-      // Load user data
+      this.loadingUser = true // Indicate loading
+      let cachedUserData: UserData | null = null
       const { value: userDataString } = await Storage.get({ key: 'userData' })
       if (userDataString) {
         try {
-          this.userData = JSON.parse(userDataString)
+          cachedUserData = JSON.parse(userDataString)
+          this.userData = cachedUserData
+          this.isLogged = true // Optimistic, will be confirmed by API call
         } catch (e) {
-          console.error('Failed to parse user data from storage:', e)
+          console.error('Failed to parse cached user data from storage:', e)
           this.userData = null
         }
-      } else {
-        this.userData = null
       }
+      try {
+        const response = await fetch('/api/client/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
 
-      // Load token
-      const { value: tokenValue } = await Storage.get({ key: 'authToken' })
-      this.token = tokenValue
-
-      // Update isLogged based on both user data and token existence
-      this.isLogged = !!this.userData && !!this.token
+        if (response.ok) {
+          const apiResponse = await response.json()
+          this.setUser(apiResponse.user || apiResponse) // Adjust based on your backend's exact response structure
+          this.isLogged = true
+          console.log('User data successfully loaded from backend.')
+        } else if (response.status === 401 || response.status === 403) {
+          // Backend responded that the user is unauthorized/forbidden (cookie missing or invalid)
+          console.log(
+            'Backend reports unauthenticated session (401/403). Clearing frontend user data.',
+          )
+          await this.clearUser()
+        } else {
+          // Other HTTP errors
+          console.error(
+            'Failed to load user data from backend:',
+            response.status,
+            await response.text(),
+          )
+          await this.clearUser() // Treat as unauthenticated
+        }
+      } catch (error) {
+        console.error('Network or other error fetching user data:', error)
+        await this.clearUser() // Assume not logged in on error
+      } finally {
+        this.loadingUser = false // Finished loading attempt
+      }
     },
+
+    // Action to clear all user data and log out
     async clearUser(): Promise<void> {
       this.isLogged = false
       this.userData = null
-      this.token = null
-      // Clear local storage
+      // No 'token' to clear here as it's HTTP-only
       await Storage.remove({ key: 'islogged' })
       await Storage.remove({ key: 'userData' })
-      await Storage.remove({ key: 'authToken' }) // Clear token from storage
+      // Crucially, also tell your backend to clear the HTTP-only cookie if possible
+      try {
+        await fetch('/api/client/logout', { method: 'POST' }) // Call your backend logout endpoint
+        console.log('Backend logout endpoint called to clear session/cookie.')
+      } catch (error) {
+        console.error('Error during backend logout API call:', error)
+      }
+    },
+
+    // Example: Manual login action (similar to what happens in Login.vue)
+    async login(identifier: string, password_hash: string): Promise<boolean> {
+      this.loadingUser = true
+      try {
+        const response = await fetch('/api/client/login', {
+          // Your backend's login endpoint
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password_hash }),
+        })
+
+        if (response.ok) {
+          await this.loadUserAndToken()
+          console.log('Manual login successful!')
+          return true
+        } else {
+          const errorData = await response.json()
+          console.error('Manual login failed:', errorData.message)
+          return false
+        }
+      } catch (error) {
+        console.error('Network error during manual login:', error)
+        return false
+      } finally {
+        this.loadingUser = false
+      }
     },
   },
 })

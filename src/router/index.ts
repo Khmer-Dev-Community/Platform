@@ -1,5 +1,7 @@
-import HomeView from '@/views/HomeView.vue'
+// router/index.ts
+
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/module/users' // Import your user store
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,7 +16,7 @@ const router = createRouter({
     },
     {
       path: '/home',
-      name: 'home',
+      name: 'homeAlias', // Changed name to avoid duplicate for '/home'
       component: () => import('../views/Home.vue'),
       meta: {
         fullPage: false,
@@ -23,7 +25,7 @@ const router = createRouter({
     {
       path: '/feed',
       name: 'feed',
-      component: HomeView,
+      component: () => import('../views/HomeView.vue'), // Assuming HomeView is now the actual component
       meta: {
         fullPage: false,
       },
@@ -42,12 +44,16 @@ const router = createRouter({
       component: () => import('../views/Profile.vue'),
       meta: {
         fullPage: false,
+        requiresAuth: true, // <-- Protect Profile route as well
       },
     },
     {
       path: '/member',
       name: 'member',
       component: () => import('../views/Member.vue'),
+      meta: {
+        requiresAuth: true, // <-- Protect Member route if needed
+      },
     },
     {
       path: '/post/:id', // Example route parameter for post ID
@@ -63,6 +69,7 @@ const router = createRouter({
       component: () => import('../views/AddNewPost.vue'),
       meta: {
         fullPage: false,
+        requiresAuth: true, // <-- THIS ROUTE REQUIRES AUTHENTICATION
       },
     },
     {
@@ -80,10 +87,11 @@ const router = createRouter({
       component: () => import('../views/ChatPage.vue'),
       meta: {
         fullPage: true,
+        requiresAuth: true, // <-- THIS ROUTE REQUIRES AUTHENTICATION
       },
     },
     {
-      path: '/get-started', // Or whatever path you prefer for the chat page
+      path: '/get-started',
       name: 'GetStart',
       component: () => import('../views/GetStartedPage.vue'),
       meta: {
@@ -91,15 +99,16 @@ const router = createRouter({
       },
     },
     {
-      path: '/notification', // Or whatever path you prefer for the chat page
+      path: '/notification',
       name: 'Notification',
       component: () => import('../views/NotificationsPage.vue'),
       meta: {
         fullPage: false,
+        requiresAuth: true, // <-- Protect Notification route if needed
       },
     },
     {
-      path: '/showcase', // Or whatever path you prefer for the chat page
+      path: '/showcase',
       name: 'Showcase',
       component: () => import('../views/ShowcasePage.vue'),
       meta: {
@@ -107,7 +116,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/event', // Or whatever path you prefer for the chat page
+      path: '/event',
       name: 'Event',
       component: () => import('../views/EventsPage.vue'),
       meta: {
@@ -115,14 +124,35 @@ const router = createRouter({
       },
     },
     {
-      path: '/event/post/:id', // Or whatever path you prefer for the chat page
-      name: 'Event Deatil',
+      path: '/event/post/:id',
+      name: 'EventDetail', // Changed name from 'Event Deatil' for consistency
       component: () => import('../views/EventDetailPage.vue'),
       meta: {
         fullPage: false,
       },
     },
   ],
+})
+
+// --- Navigation Guard ---
+router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore() // Get the user store instance
+  if (!userStore.userData && !userStore.loadingUser) {
+    //await userStore.loadUserAndToken()
+  }
+
+  const requiresAuth = to.meta.requiresAuth
+  const isLoggedIn = userStore.isLogged
+
+  if (requiresAuth && !isLoggedIn) {
+    console.log(`Redirecting to /login from ${to.path} (requires auth, not logged in)`)
+    next({ name: 'Login', query: { redirect: to.fullPath } })
+  } else if ((to.name === 'Login' || to.name === 'GetStart') && isLoggedIn) {
+    console.log(`Redirecting from ${to.path} to / (already logged in)`)
+    next({ name: 'home' }) // Or a more appropriate dashboard route
+  } else {
+    next()
+  }
 })
 
 export default router

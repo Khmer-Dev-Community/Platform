@@ -12,8 +12,8 @@ export default defineConfig({
     //vueDevTools(),
     tailwindcss(),
     VueI18nPlugin({
-      include: path.resolve(__dirname, './src/locales/lang**'), // Path to your locale files
-      fullInstall: false, // Optional: if you want to tree-shake unused parts
+      include: path.resolve(__dirname, './src/locales/lang**'),
+      fullInstall: false,
     }),
   ],
   resolve: {

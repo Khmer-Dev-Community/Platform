@@ -3,7 +3,7 @@
     class="fixed shadow w-full z-50 transition-colors duration-300 bg-white dark:bg-gray-900 dark:text-white border-b border-white dark:border-gray-600"
     style="z-index: 999999"
   >
-    <div class="relative mx-auto container mx-auto px-1 sm:px-4 lg:px-6 hidden lg:block">
+    <div class="relative mx-auto container px-1 sm:px-4 lg:px-6 hidden lg:block">
       <div class="relative flex items-center justify-between h-14">
         <div class="flex-shrink-0">
           <h1 class="text-lg font-bold">
@@ -42,7 +42,7 @@
             <van-icon name="service-o" /> {{ $t('menu.about') }}
           </router-link>
 
-          <div class="relative" v-if="$isLoggedIn">
+          <div class="relative" v-if="$isLoggedIn.value">
             <button
               @click="toggleMessageDropdown"
               class="ml-2 rounded-xl py-1 px-3 flex items-center h-[40px] justify-center bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none msg-dropdown-btn"
@@ -103,23 +103,56 @@
             </div>
           </div>
 
-          <el-button-group class="px-3 py-3 text-sm font-small -m-2 text-white" v-if="!$isLoggedIn">
-            <el-button
-              class="bg-blue-500 hover:bg-blue-600 dark:bg-gray-700 text-white dark:bg-gray-700"
+          <div class="relative" v-if="$isLoggedIn.value">
+            <button
+              @click="toggleDropDowProfile"
+              class="flex items-center space-x-2 profile-dropdown-btn"
             >
-              <router-link to="/login"
-                ><van-icon name="user-o" /> {{ $t('menu.login') }}
-              </router-link>
-            </el-button>
-            <el-button
-              class="bg-blue-500 hover:bg-blue-600 dark:bg-gray-700 text-white dark:bg-gray-700"
+              <img
+                :src="$userData.value?.avatar_url || 'https://via.placeholder.com/40'"
+                alt="User Avatar"
+                class="w-8 h-8 rounded-full object-cover"
+              />
+              <span class="font-medium text-gray-700 dark:text-gray-300 hidden sm:block">{{
+                $userData.value?.username || 'User'
+              }}</span>
+              <svg
+                class="ml-1 h-4 w-4 text-gray-700 dark:text-gray-300"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            <div
+              v-if="dropDownprofile"
+              class="absolute right-0 mt-2 w-48 border rounded-md shadow-lg z-10 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 profile-dropdown-content"
             >
-              <router-link to="/scanner" v-if="!$isLoggedIn"
-                ><van-icon name="add-o" /> {{ $t('menu.signup') }}
+              <router-link
+                to="/profile"
+                @click="dropDownprofile = false"
+                class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Profile
               </router-link>
-            </el-button>
-          </el-button-group>
+              <button
+                @click="AppLogout"
+                class="block w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
           <div
+            v-if="$isLoggedIn.value"
             class="ml-2 rounded-xl py-1 px-3 flex items-center justify-center bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none"
           >
             <router-link
@@ -193,6 +226,12 @@
               </button>
             </div>
           </div>
+          <button
+            class="ml-2 rounded-xl py-1 h-[40px] px-3 flex items-center justify-center bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none"
+            v-if="!$isLoggedIn.value"
+          >
+            <router-link to="/login"> {{ $t('menu.login') }} </router-link>
+          </button>
         </div>
         <div class="flex lg:hidden">
           <button @click="toggleMenu" class="text-gray-700 focus:outline-none">
@@ -262,161 +301,147 @@
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Storage } from '@capacitor/storage'
 import { showNotify } from 'vant'
 import { useThemeStore } from '@/stores/theme'
-import { useUserStore } from '@/stores/module/users'
+import { useUserStore, type UserData } from '@/stores/module/users'
 import { Search, Moon, Sunny, Plus } from '@element-plus/icons-vue'
 
-export default {
-  components: {
-    Search,
-    Moon,
-    Sunny,
-    Plus,
+const emit = defineEmits(['open-search-dialog'])
+const instance = getCurrentInstance()
+const $isLoggedIn = computed<boolean>(
+  () => instance?.appContext.config.globalProperties.$isLoggedIn?.value ?? false,
+)
+const $userData = computed<UserData | null>(
+  () => instance?.appContext.config.globalProperties.$userData?.value ?? null,
+)
+
+const { t, locale } = useI18n()
+const router = useRouter()
+const themeStore = useThemeStore()
+const userStore = useUserStore()
+
+const isDark = computed(() => themeStore.isDark)
+
+const applyTheme = (isDarkValue: boolean) => {
+  if (isDarkValue) document.documentElement.classList.add('dark')
+  else document.documentElement.classList.remove('dark')
+}
+
+const toggleTheme = () => {
+  const newTheme = isDark.value ? 'light' : 'dark'
+  themeStore.setTheme(newTheme)
+  localStorage.setItem('theme', newTheme)
+  applyTheme(isDark.value)
+}
+
+watch(
+  isDark,
+  (newVal) => {
+    document.documentElement.classList.toggle('dark', newVal)
   },
-  setup(prop, { emit }) {
-    const { t, locale } = useI18n()
-    const router = useRouter()
-    const themeStore = useThemeStore()
-    const userStore = useUserStore()
+  { immediate: true },
+)
 
-    const isDark = computed(() => themeStore.isDark)
-
-    const applyTheme = (isDark) => {
-      if (isDark) document.documentElement.classList.add('dark')
-      else document.documentElement.classList.remove('dark')
-    }
-    const toggleTheme = () => {
-      const newTheme = isDark.value ? 'light' : 'dark'
-      themeStore.setTheme(newTheme)
-      localStorage.setItem('theme', newTheme)
-      applyTheme(isDark.value)
-    }
-
-    watch(
-      isDark,
-      (newVal) => {
-        document.documentElement.classList.toggle('dark', newVal)
-      },
-      { immediate: true },
+onMounted(() => {
+  const storedTheme: any = localStorage.getItem('theme')
+  if (storedTheme) themeStore.setTheme(storedTheme)
+  else
+    themeStore.setTheme(
+      window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
     )
-    onMounted(() => {
-      const storedTheme = localStorage.getItem('theme')
-      if (storedTheme) isDark.value = storedTheme === 'dark'
-      else isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-      applyTheme(isDark.value)
-    })
+  applyTheme(isDark.value)
+})
 
-    const show = ref(false)
-    const dropdownOpen = ref(false)
-    const dropDownprofile = ref(false)
-    const messageDropdownOpen = ref(false) // State for message dropdown
-    const unreadMessagesCount = ref(0) // Placeholder for unread count
+const show = ref(false)
+const dropdownOpen = ref(false) // For language dropdown
+const dropDownprofile = ref(false) // For user profile dropdown
+const messageDropdownOpen = ref(false) // State for message dropdown
+const unreadMessagesCount = ref(0) // Placeholder for unread count
 
-    const languages = [
-      { name: 'En', code: 'en' },
-      { name: 'ខ្មែរ', code: 'km' },
-    ]
+const languages = [
+  { name: 'En', code: 'en' },
+  { name: 'ខ្មែរ', code: 'km' },
+]
 
-    const langSelected = computed(() => {
-      const current = languages.find((lang) => lang.code === locale.value)
-      return current ? current.name : 'English'
-    })
+const langSelected = computed(() => {
+  const current = languages.find((lang) => lang.code === locale.value)
+  return current ? current.name : 'English'
+})
+const closeAllDropdowns = () => {
+  dropdownOpen.value = false
+  messageDropdownOpen.value = false
+  dropDownprofile.value = false
+}
 
-    const toggleDropdown = () => {
-      dropdownOpen.value = !dropdownOpen.value
-      if (messageDropdownOpen.value) messageDropdownOpen.value = false // Close message dropdown if open
-    }
+const toggleDropdown = () => {
+  closeAllDropdowns()
+  dropdownOpen.value = !dropdownOpen.value
+}
 
-    // Toggle function for message dropdown
-    const toggleMessageDropdown = () => {
-      messageDropdownOpen.value = !messageDropdownOpen.value
-      if (dropdownOpen.value) dropdownOpen.value = false // Close language dropdown if open
-    }
+const toggleMessageDropdown = () => {
+  closeAllDropdowns()
+  messageDropdownOpen.value = !messageDropdownOpen.value
+}
 
-    const selectLanguage = async (langCode) => {
-      locale.value = langCode
-      await Storage.set({ key: 'lang', value: langCode })
-      console.log(langCode)
+const toggleDropDowProfile = () => {
+  closeAllDropdowns()
+  dropDownprofile.value = !dropDownprofile.value
+}
+
+const selectLanguage = async (langCode: string) => {
+  locale.value = langCode
+  await Storage.set({ key: 'lang', value: langCode })
+  console.log('Language selected:', langCode)
+  dropdownOpen.value = false // Close dropdown after selection
+}
+
+const AppLogout = async () => {
+  await userStore.clearUser() // Call clearUser from Pinia store
+  showNotify({ type: 'success', message: 'Logout successful!' })
+  router.push('/login')
+  dropDownprofile.value = false // Close dropdown after logout
+}
+
+const loginPage = () => {
+  // This seems to redirect to /chat based on your template, confirm this is intended
+  router.push('/chat')
+}
+
+watch(locale, (newLocale) => {
+  console.log('Locale changed to:', newLocale)
+})
+
+// Add a global click listener to close dropdowns when clicking outside
+onMounted(() => {
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement
+    const isOutsideLanguageDropdown =
+      !target.closest('.lang-dropdown-btn') && !target.closest('.lang-dropdown-content')
+    const isOutsideMessageDropdown =
+      !target.closest('.msg-dropdown-btn') && !target.closest('.msg-dropdown-content')
+    const isOutsideProfileDropdown =
+      !target.closest('.profile-dropdown-btn') && !target.closest('.profile-dropdown-content')
+
+    if (dropdownOpen.value && isOutsideLanguageDropdown) {
       dropdownOpen.value = false
     }
-
-    const AppLogout = async () => {
-      await userStore.clearUser()
-      showNotify({ type: 'success', message: 'Logout successful!' })
-      router.push('/login')
+    if (messageDropdownOpen.value && isOutsideMessageDropdown) {
+      messageDropdownOpen.value = false
     }
-
-    const loginPage = () => router.push('/chat')
-    const toggleDropDowProfile = () => (dropDownprofile.value = !dropDownprofile.value)
-    watch(locale, (newLocale) => {
-      console.log('Locale changed to:', newLocale)
-    })
-
-    // Optional: Add a click listener to close dropdowns when clicking outside
-    onMounted(() => {
-      document.addEventListener('click', (event) => {
-        const target = event.target
-        // Check if the click is outside the dropdowns and their buttons
-        const isOutsideLanguageDropdown =
-          !target.closest('.lang-dropdown-btn') && !target.closest('.lang-dropdown-content')
-        const isOutsideMessageDropdown =
-          !target.closest('.msg-dropdown-btn') && !target.closest('.msg-dropdown-content')
-
-        if (dropdownOpen.value && isOutsideLanguageDropdown) {
-          dropdownOpen.value = false
-        }
-        if (messageDropdownOpen.value && isOutsideMessageDropdown) {
-          messageDropdownOpen.value = false
-        }
-      })
-    })
-
-    return {
-      t,
-      show,
-      loginPage,
-      langSelected,
-      dropdownOpen,
-      languages,
-      toggleDropdown,
-      selectLanguage,
-      toggleDropDowProfile,
-      dropDownprofile,
-      AppLogout,
-      isDark,
-      toggleTheme,
-      emit,
-      messageDropdownOpen, // Return messageDropdownOpen
-      toggleMessageDropdown, // Return toggleMessageDropdown
-      unreadMessagesCount, // Return unreadMessagesCount
+    if (dropDownprofile.value && isOutsideProfileDropdown) {
+      dropDownprofile.value = false
     }
-  },
-
-  props: {
-    title: {
-      type: String,
-      default: 'JOB LINKED',
-    },
-  },
-}
+  })
+})
 </script>
 
-<style>
-/* ... (your existing styles) ... */
-
-/* Ensure dropdowns appear above other content */
+<style scoped>
 .z-10 {
   z-index: 10;
-}
-
-/* Remove or adjust ml-34 from the search bar as mx-auto will handle centering */
-.ml-34 {
-  margin-left: initial; /* Reset or remove this class if it causes unwanted offset */
 }
 </style>
