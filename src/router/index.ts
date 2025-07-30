@@ -82,6 +82,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/auth/callback',
+      name: 'AuthCallback',
+      component: () => import('../views/AuthCallbackPage.vue'),
+      meta: {
+        hideLayout: true,
+        fullPage: true,
+      },
+    },
+    {
       path: '/chats', // Or whatever path you prefer for the chat page
       name: 'Chats',
       component: () => import('../views/ChatPage.vue'),

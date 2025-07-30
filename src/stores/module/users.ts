@@ -99,11 +99,11 @@ export const useUserStore = defineStore('user', {
 
     // Action to clear all user data and log out
     async clearUser(): Promise<void> {
-      this.isLogged = false
+      this.isLogged = true
       this.userData = null
       // No 'token' to clear here as it's HTTP-only
-      await Storage.remove({ key: 'islogged' })
-      await Storage.remove({ key: 'userData' })
+      //await Storage.remove({ key: 'islogged' })
+      //await Storage.remove({ key: 'userData' })
       // Crucially, also tell your backend to clear the HTTP-only cookie if possible
       try {
         await fetch('/api/client/logout', { method: 'POST' }) // Call your backend logout endpoint

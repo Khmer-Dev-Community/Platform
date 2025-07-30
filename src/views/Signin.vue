@@ -55,6 +55,8 @@
         </div>
         <div class="my-6 space-y-3">
           <button
+            disabled
+            readOnly
             class="w-full flex items-center justify-center px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm"
           >
             <i class="fab fa-google w-5 h-5 mr-3"></i>
@@ -138,13 +140,9 @@ const toggleShowPassword = () => {
 }
 
 onMounted(async () => {
-  // This is crucial: When the component mounts (e.g., after GitHub redirects back),
-  // check if the user is now logged in. The backend should have set
-  // the necessary session/token (e.g., via cookies).
   await userStore.loadUserAndToken()
   if (userStore.isLogged) {
     console.log('User is logged in:', userStore.userData?.name)
-    // If the user is logged in, perhaps redirect them to a dashboard
     router.push('/') // Or '/dashboard' if you have one
   } else {
     console.log('User is not logged in.')
@@ -186,11 +184,8 @@ const handleLogin = async () => {
 // New method for GitHub Login
 const handleGithubLogin = () => {
   console.log('Initiating GitHub login...')
-  // Redirect the user to your backend's GitHub login endpoint
-  // Your backend will then redirect to GitHub's authorization page
   window.location.href = `${API_BASE_URL}/api/account/auth02/github/login`
 }
-
 const logout = async () => {
   await userStore.clearUser()
   console.log('Logged out!')
@@ -198,7 +193,4 @@ const logout = async () => {
   router.push('/login')
 }
 </script>
-
-<style scoped>
-/* No specific scoped styles needed if using only Tailwind utility classes */
-</style>
+<style scoped></style>
