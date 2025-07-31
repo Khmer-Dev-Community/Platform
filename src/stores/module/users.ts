@@ -1,9 +1,12 @@
 // src/stores/module/users.ts
 import { defineStore } from 'pinia'
-import { Storage } from '@capacitor/storage' // Still useful for general user data, not the auth token
+import { Storage } from '@capacitor/storage'
+
+import request from '@/utils/request'
+import type { BackendResponse } from '@/utils/request'
 
 export interface UserData {
-  id: number // Changed to number based on your previous JSON example
+  id: number
   fname: string
   lname: string
   username: string
@@ -17,20 +20,22 @@ export interface UserData {
   name: string // User's full name from backend
   createdAt: string
   updatedAt: string
-  [key: string]: any
+  roleid?: number // Assuming roleid can be on UserData
+  companyId?: number // Assuming companyId can be on UserData
+  [key: string]: any // Allows for additional properties
 }
 
 interface UserState {
   isLogged: boolean
   userData: UserData | null
-  loadingUser: boolean // Add a loading state for user data
+  loadingUser: boolean
 }
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     isLogged: false,
     userData: null,
-    loadingUser: false, // Initialize loading state
+    loadingUser: false,
   }),
   actions: {
     async setIsLogged(value: boolean): Promise<void> {
@@ -48,9 +53,10 @@ export const useUserStore = defineStore('user', {
     },
 
     async loadUserAndToken(): Promise<void> {
-      this.loadingUser = true // Indicate loading
+      this.loadingUser = true
       let cachedUserData: UserData | null = null
       const { value: userDataString } = await Storage.get({ key: 'userData' })
+
       if (userDataString) {
         try {
           cachedUserData = JSON.parse(userDataString)
@@ -59,82 +65,74 @@ export const useUserStore = defineStore('user', {
         } catch (e) {
           console.error('Failed to parse cached user data from storage:', e)
           this.userData = null
+          this.isLogged = false // Reset if cached data is corrupt
         }
       }
       try {
-        const response = await fetch('/api/client/profile', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+        const response = await request.get<BackendResponse>('/account/auth02/profile')
+        console.log(response.data)
+        const apiResponseData = response.data
+        this.setUser(
+          (apiResponseData.user as UserData) ||
+            (apiResponseData.data as UserData) ||
+            (apiResponseData as unknown as UserData),
+        )
 
-        if (response.ok) {
-          const apiResponse = await response.json()
-          this.setUser(apiResponse.user || apiResponse) // Adjust based on your backend's exact response structure
-          this.isLogged = true
-          console.log('User data successfully loaded from backend.')
-        } else if (response.status === 401 || response.status === 403) {
-          // Backend responded that the user is unauthorized/forbidden (cookie missing or invalid)
+        this.isLogged = true
+      } catch (error: any) {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
           console.log(
-            'Backend reports unauthenticated session (401/403). Clearing frontend user data.',
+            'Axios reported unauthenticated session (401/403). Clearing frontend user data.',
           )
           await this.clearUser()
         } else {
-          // Other HTTP errors
-          console.error(
-            'Failed to load user data from backend:',
-            response.status,
-            await response.text(),
-          )
-          await this.clearUser() // Treat as unauthenticated
+          console.error('Network or other error fetching user data via Axios:', error)
+          await this.clearUser()
         }
-      } catch (error) {
-        console.error('Network or other error fetching user data:', error)
-        await this.clearUser() // Assume not logged in on error
       } finally {
-        this.loadingUser = false // Finished loading attempt
+        this.loadingUser = false
       }
     },
 
-    // Action to clear all user data and log out
     async clearUser(): Promise<void> {
-      this.isLogged = true
+      this.isLogged = false
       this.userData = null
-      // No 'token' to clear here as it's HTTP-only
-      //await Storage.remove({ key: 'islogged' })
-      //await Storage.remove({ key: 'userData' })
-      // Crucially, also tell your backend to clear the HTTP-only cookie if possible
+      // Remove local storage data (not the HttpOnly cookie itself)
+      await Storage.remove({ key: 'islogged' })
+      await Storage.remove({ key: 'userData' })
       try {
-        await fetch('/api/client/logout', { method: 'POST' }) // Call your backend logout endpoint
-        console.log('Backend logout endpoint called to clear session/cookie.')
+        // Use your Axios instance 'request' for logout
+        await request.post('/api/client/logout')
+        console.log('Backend logout endpoint called via Axios to clear session/cookie.')
       } catch (error) {
-        console.error('Error during backend logout API call:', error)
+        console.error('Error during backend logout API call via Axios:', error)
+        // Frontend state is already cleared; this just logs the error if backend logout fails.
       }
     },
 
-    // Example: Manual login action (similar to what happens in Login.vue)
     async login(identifier: string, password_hash: string): Promise<boolean> {
       this.loadingUser = true
       try {
-        const response = await fetch('/api/client/login', {
-          // Your backend's login endpoint
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier, password_hash }),
+        // Use your Axios instance 'request' for login
+        const response = await request.post<BackendResponse>('/api/client/login', {
+          identifier,
+          password_hash,
         })
-
-        if (response.ok) {
-          await this.loadUserAndToken()
-          console.log('Manual login successful!')
-          return true
+        await this.loadUserAndToken() // This will re-fetch profile and confirm authentication
+        console.log('Manual login successful via Axios!')
+        return true
+      } catch (error: any) {
+        // This catch block will receive an AxiosError if the login failed
+        if (error.response && error.response.data) {
+          console.error(
+            'Manual login failed (Axios error):',
+            error.response.data.message || 'Unknown error',
+          )
+        } else if (error.message) {
+          console.error('Manual login failed (Network/Other error):', error.message)
         } else {
-          const errorData = await response.json()
-          console.error('Manual login failed:', errorData.message)
-          return false
+          console.error('Manual login failed (Unknown error):', error)
         }
-      } catch (error) {
-        console.error('Network error during manual login:', error)
         return false
       } finally {
         this.loadingUser = false

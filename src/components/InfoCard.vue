@@ -1,19 +1,23 @@
 <template>
   <div
     :class="[imageBg]"
-    class="flex-shrink-0 h-[220px] rounded-lg p-5 text-white flex flex-col justify-between overflow-hidden relative"
+    class="flex-shrink-0 h-[180px] lg:h-[220px] rounded-lg p-2 lg:p-5 text-white flex flex-col justify-between overflow-hidden relative"
   >
     <div class="flex justify-between items-center mb-2">
-      <i class="fas fa-bullhorn text-2xl"></i> <span class="text-sm opacity-80">{{ date }}</span>
+      <i class="fas fa-bullhorn text-sm lg:text-lg"></i>
+      <span class="text-sm opacity-80">{{ date }}</span>
     </div>
-    <h3 class="text-lg font-semibold mb-2 line-clamp-2">
+    <h3 class="text-sm lg:text-lg font-semibold mb-2 line-clamp-5">
       {{ title }}
     </h3>
-    <p class="text-sm opacity-90 mb-2 line-clamp-3">
+    <p class="text-sm opacity-90 mb-2 line-clamp-2 hidden sm:block">
       {{ description }}
     </p>
-    <a href="#" class="inline-flex items-center text-sm font-medium hover:underline">
-      Learn more
+    <a
+      href="#"
+      class="inline-flex items-center text-sm font-medium hover:underline hidden sm:block"
+    >
+      Detail
       <i class="fas fa-arrow-right ml-2 text-xs"></i>
     </a>
 

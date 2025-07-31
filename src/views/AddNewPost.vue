@@ -1,10 +1,12 @@
 <template>
-  <div class="dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100 py-1">
+  <div class="dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100 py-1 mb-20 mt-4">
     <div class="mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-6">Create New Post</h1>
+      <h1 class="text-base lg:text-2xl font-bold text-gray-900 dark:text-gray-50 mb-6">
+        Create New Post
+      </h1>
 
-      <form @submit.prevent="submitPost">
-        <div class="mb-5">
+      <form @submit.prevent="submitPost" ref="DialogFormRef" :model="post">
+        <div class="mb-2">
           <label
             for="postTitle"
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
@@ -15,7 +17,7 @@
             id="postTitle"
             v-model="post.title"
             placeholder="A compelling title for your post..."
-            class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+            class="w-full p-3 h-[40px] text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
             required
           />
         </div>
@@ -26,18 +28,31 @@
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >Description</label
           >
-          <textarea
-            id="postDescription"
+          <v-md-editor
+            ref="myVMdEditor"
+            mode="edit"
             v-model="post.description"
-            placeholder="Share your thoughts, experiences, or insights here..."
-            rows="6"
-            class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-          ></textarea>
+            height="400px"
+            left-toolbar=" h bold italic strikethrough quote customImageUploadButton code "
+            right-toolbar="preview fullscreen "
+            :toolbar="customToolbarConfig"
+            placeholder="Your content ..."
+            class="rounded-lg overflow-hidden border dark:bg-gray-700 border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+            @upload-image="handleVMdEditorUploadImage"
+          >
+          </v-md-editor>
+          <input
+            ref="editorFileInput"
+            type="file"
+            accept="image/*"
+            @change="onEditorFileChange"
+            style="display: none"
+          />
         </div>
 
         <div class="mb-5">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >Image (Optional)</label
+            >Featured Image (Optional)</label
           >
           <div
             @dragover.prevent="onDragOver"
@@ -107,7 +122,7 @@
             id="postLink"
             v-model="post.link"
             placeholder="e.g., https://yourarticle.com"
-            class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+            class="w-full p-3 h-[40px] text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
           />
         </div>
 
@@ -124,7 +139,7 @@
             @keydown.enter.prevent="addTag"
             @blur="addTag"
             placeholder="Add tags like: programming, frontend, design"
-            class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+            class="w-full p-3 h-[40px] rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
           />
           <div class="mt-3 flex flex-wrap gap-2">
             <span
@@ -166,6 +181,7 @@
           </button>
           <button
             type="submit"
+            @click="submitPost"
             class="px-6 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-semibold transition-colors"
           >
             Post
@@ -175,54 +191,126 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router' // For navigation after post
+import { useRouter } from 'vue-router'
+import { useThemeStore } from '@/stores/theme'
+import axios from 'axios'
+import { PostService } from '@/services/post.service'
 
 const router = useRouter()
+const themeStore = useThemeStore()
 
-// Reactive state for the new post data
 const post = ref({
   title: '',
   description: '',
-  imageFile: null, // Stores the actual File object
-  imagePreview: null, // Stores the URL for image preview
+  imageFile: null,
+  imagePreview: null,
   link: '',
   tags: [],
 })
 
-const tagInput = ref('') // For handling the tag input field
-const isDragging = ref(false) // For drag-and-drop visual feedback
-const fileInput = ref(null) // Reference to the hidden file input
+const tagInput = ref('')
+const isDragging = ref(false)
+const fileInput = ref(null)
 
-// --- Image Upload Handlers ---
+const editorFileInput = ref(null)
+const myVMdEditor = ref(null)
+
+const customToolbarConfig = {
+  customImageUploadButton: {
+    title: 'Upload Image',
+    icon: 'v-md-icon-img',
+    action(editor) {
+      console.log('Toolbar config action triggered.')
+      triggerEditorImageUpload()
+    },
+  },
+  // Add other custom toolbar items here if you have any
+}
+
+const handleVMdEditorUploadImage = async (event, insertImageCallback, files) => {
+  console.log('--- VMdEditor Image Upload Triggered ---')
+
+  const file = files[0]
+  if (!file) {
+    console.warn('VMdEditor: No file selected or received.')
+    return
+  }
+  const formData = new FormData()
+  formData.append('image', file)
+
+  try {
+    const uploadUrl = 'YOUR_IMAGE_UPLOAD_API_ENDPOINT' // <<< IMPORTANT: Replace this with your actual backend image upload URL
+    const response = await axios.post(uploadUrl, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
+    if (response.data && response.data.url) {
+      const imageUrl = response.data.url
+      const imageAlt = file.name
+      insertImageCallback({ url: imageUrl, desc: imageAlt })
+      console.log('--- VMdEditor Image Upload SUCCESS & Inserted ---')
+    } else {
+      console.error('VMdEditor: Image upload failed: Backend did not return a valid URL.')
+      alert(
+        'Image upload failed: Server did not provide an image URL. Please check console for details.',
+      )
+    }
+  } catch (error) {
+    console.error('--- VMdEditor Image Upload ERROR ---', error)
+    alert(`Image upload failed! Check console for details.`)
+  }
+}
+
+// --- Logic for the Custom Toolbar Button (Remains the same, but called by toolbar config) ---
+const triggerEditorImageUpload = () => {
+  console.log('Custom image upload button (from action) clicked!')
+  if (editorFileInput.value) {
+    console.log('Triggering hidden file input click.')
+    editorFileInput.value.click()
+  } else {
+    console.error('editorFileInput ref is null.')
+  }
+}
+
+const onEditorFileChange = (event) => {
+  console.log("Hidden file input 'change' event triggered!")
+  const files = event.target.files
+  if (files.length > 0) {
+    if (myVMdEditor.value && typeof myVMdEditor.value.insertImage === 'function') {
+      handleVMdEditorUploadImage(null, myVMdEditor.value.insertImage, [files[0]])
+    } else {
+      console.error('VMdEditor instance or its insertImage method is not available.')
+      alert('Editor is not ready to insert images. Please try again or refresh.')
+    }
+    event.target.value = ''
+  } else {
+    console.log('No file selected by user in the dialog.')
+  }
+}
+
+// --- Existing Logic for the Post's Featured Image (Drag & Drop / File Input) ---
 const triggerFileInput = () => {
   fileInput.value.click()
 }
-
 const onFileChange = (event) => {
   const file = event.target.files[0]
   handleFile(file)
 }
-
 const onDragOver = () => {
   isDragging.value = true
 }
-
 const onDragLeave = () => {
   isDragging.value = false
 }
-
 const onDrop = (event) => {
   isDragging.value = false
   const file = event.dataTransfer.files[0]
   handleFile(file)
 }
-
 const handleFile = (file) => {
   if (file && file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024) {
-    // Max 10MB
     post.value.imageFile = file
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -235,17 +323,15 @@ const handleFile = (file) => {
     post.value.imagePreview = null
   }
 }
-
 const removeImage = () => {
   post.value.imageFile = null
   post.value.imagePreview = null
   if (fileInput.value) {
-    // Reset file input to allow re-uploading same file
     fileInput.value.value = ''
   }
 }
 
-// --- Tag Handlers ---
+// --- Existing Logic for Tags ---
 const addTag = () => {
   const tagsToAdd = tagInput.value
     .split(',')
@@ -256,33 +342,92 @@ const addTag = () => {
       post.value.tags.push(newTag)
     }
   })
-  tagInput.value = '' // Clear input after adding
+  tagInput.value = ''
 }
-
 const removeTag = (index) => {
   post.value.tags.splice(index, 1)
 }
 
+// --- Post Submission and Cancel ---
+const onSubmit = () => {
+  DialogFormRef.value?.validate(async (valid: boolean) => {
+    if (!valid) return
+
+    try {
+      const isUpdate = state.formData.id !== 0
+      const apiMethod = isUpdate ? BonusService().UpdateEmployeeBonus : BonusService().CreateEmployeeBonus
+
+      const response = await apiMethod(state.formData)
+
+      if (response?.statusCode === 200) {
+        ElMessage.success(proxy?.$t(isUpdate ? 'alerts.updated' : 'alerts.success'))
+        emit('refresh')
+        closeDialog()
+        state.formData = { ...initialState } // Reset after success
+      }
+    } catch (error) {
+      console.error(`Error ${isUpdate ? 'updating' : 'creating'}: ${error.message || error}`)
+      ElMessage.error(proxy?.$t('alerts.failure') || 'An unexpected error occurred')
+    }
+  })
+}
 const submitPost = () => {
   console.log('New Post Data:', {
     title: post.value.title,
     description: post.value.description,
-    imageFileName: post.value.imageFile ? post.value.imageFile.name : 'No image',
+    imageFileName: post.value.imageFile ? post.value.imageFile.name : 'No featured image',
     link: post.value.link,
     tags: post.value.tags,
   })
-
-  alert('Post submitted! (Check console for data)')
-  // Optionally, redirect to the home page or the new post's detail page
-  router.push('/') // Assuming '/' is your main feed
+  PostService().createPostContent(post)
+  //router.push('/')
 }
-
 const cancelPost = () => {
-  // Confirm with user if they have unsaved changes
   if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
-    router.back() // Go back to the previous page
+    router.back()
   }
 }
 </script>
 
-<style scoped></style>
+<style>
+/* Existing V-MD-Editor dark mode styles and general styles */
+.dark .v-md-editor {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+.dark .v-md-editor .v-md-editor__toolbar {
+  background-color: #1f2937;
+  border-bottom-color: #4b5563;
+}
+.dark .v-md-editor .v-md-editor__editor {
+  background-color: #1f2937;
+  color: #d1d5db !important;
+}
+.dark .v-md-editor .v-md-editor__editor-wrapper .CodeMirror {
+  background-color: #1f2937;
+  color: #d1d5db !important;
+}
+.dark .v-md-editor .v-md-editor__editor-wrapper .CodeMirror-scroll .CodeMirror-lines {
+  color: #d1d5db !important;
+}
+.dark .v-md-editor .v-md-editor__editor-wrapper .CodeMirror .CodeMirror-placeholder {
+  color: #9ca3af !important;
+}
+.v-md-textarea-editor pre,
+.v-md-textarea-editor textarea {
+  color: #45474b;
+}
+.dark .v-md-textarea-editor pre,
+.dark .v-md-textarea-editor textarea {
+  color: #ffffff !important;
+  padding: 5px;
+}
+.dark .v-md-editor .v-md-editor__toolbar-item {
+  color: #d1d5db;
+  padding: 5px;
+}
+.v-md-editor__preview {
+  display: none !important;
+}
+</style>

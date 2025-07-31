@@ -39,10 +39,10 @@
             to="/about"
             class="px-4 py-2 rounded-md font-medium text-sm sm:text-sm md:text-base font-bold text-gray-700 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400"
           >
-            <van-icon name="service-o" /> {{ $t('menu.about') }}
+            <van-icon name="service-o" /> {{ $t('menu.about') }} {{ $isLoggedIn }}
           </router-link>
 
-          <div class="relative" v-if="$isLoggedIn.value">
+          <div class="relative" v-if="$isLoggedIn">
             <button
               @click="toggleMessageDropdown"
               class="ml-2 rounded-xl py-1 px-3 flex items-center h-[40px] justify-center bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none msg-dropdown-btn"
@@ -62,7 +62,7 @@
               <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Messages</h3>
                 <button
-                  @click="router.push('/chat')"
+                  @click="router.push('/chats')"
                   class="text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   <el-icon><Plus /></el-icon>
@@ -103,18 +103,18 @@
             </div>
           </div>
 
-          <div class="relative" v-if="$isLoggedIn.value">
+          <div class="relative" v-if="$isLoggedIn">
             <button
               @click="toggleDropDowProfile"
               class="flex items-center space-x-2 profile-dropdown-btn"
             >
               <img
-                :src="$userData.value?.avatar_url || 'https://via.placeholder.com/40'"
+                :src="$userData?.avatar_url || 'https://via.placeholder.com/40'"
                 alt="User Avatar"
                 class="w-8 h-8 rounded-full object-cover"
               />
               <span class="font-medium text-gray-700 dark:text-gray-300 hidden sm:block">{{
-                $userData.value?.username || 'User'
+                $userData?.username || 'User'
               }}</span>
               <svg
                 class="ml-1 h-4 w-4 text-gray-700 dark:text-gray-300"
@@ -152,7 +152,7 @@
             </div>
           </div>
           <div
-            v-if="$isLoggedIn.value"
+            v-if="$isLoggedIn"
             class="ml-2 rounded-xl py-1 px-3 flex items-center justify-center bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none"
           >
             <router-link
@@ -228,7 +228,7 @@
           </div>
           <button
             class="ml-2 rounded-xl py-1 h-[40px] px-3 flex items-center justify-center bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none"
-            v-if="!$isLoggedIn.value"
+            v-if="!$isLoggedIn"
           >
             <router-link to="/login"> {{ $t('menu.login') }} </router-link>
           </button>
@@ -253,12 +253,10 @@
         </div>
       </div>
     </div>
-
     <van-nav-bar
-      :title="title"
       @click-left="show = true"
       @click-right="loginPage"
-      class="lg:hidden pt-1 -mt-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+      class="lg:hidden pt-1 mt-4 text-gray-900 dark:text-gray-100"
     >
       <template #left>
         <div style="display: flex; align-items: center">
@@ -269,35 +267,97 @@
             to="/home"
             class="text-gray-700 dark:text-gray-300"
           />
+          <router-link to="/">
+            <img src="@/assets/kdc.png" width="120" class="-mt-2" />
+          </router-link>
+          {{ $appThem }}
         </div>
       </template>
       <template #right>
         <div style="display: flex; align-items: center">
           <van-icon
-            :name="isDark ? 'sunny-o' : 'moon-o'"
-            size="25"
-            @click.stop="toggleTheme"
-            class="text-gray-700 dark:text-gray-300 ml-4"
-          />
-
-          <van-icon
             name="chat-o"
             badge="9"
             replace
-            to="/chat"
+            to="/chats"
             style="font-size: 25px; margin-left: 20px"
             class="text-gray-700 dark:text-gray-300"
           />
-          <van-icon
-            name="scan"
-            style="font-size: 25px; margin-left: 20px"
-            replace
-            to="/scan"
-            class="text-gray-700 dark:text-gray-300"
-          />
+
+          <div class="relative ml-2" v-if="$isLoggedIn">
+            <button
+              @click="toggleDropDowProfile"
+              class="flex items-center space-x-2 profile-dropdown-btn"
+            >
+              <img
+                :src="$userData?.avatar_url || 'https://via.placeholder.com/40'"
+                alt="User Avatar"
+                class="w-8 h-8 rounded-full object-cover"
+              />
+              <span class="font-medium text-gray-700 dark:text-gray-300 hidden sm:block">{{
+                $userData?.username || 'User'
+              }}</span>
+              <svg
+                class="ml-1 h-4 w-4 text-gray-700 dark:text-gray-300"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            <div
+              v-if="dropDownprofile"
+              class="absolute right-0 mt-2 w-48 border rounded-md shadow-lg z-10 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 profile-dropdown-content"
+            >
+              <router-link
+                to="/profile"
+                @click="dropDownprofile = false"
+                class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Profile
+              </router-link>
+              <button
+                @click="AppLogout"
+                class="block w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
       </template>
     </van-nav-bar>
+    <van-popup
+      v-model:show="show"
+      position="left"
+      :style="{ width: '300px', height: '100%' }"
+      @click-overlay="onClickOverlay"
+      @click-close-icon="onClickCloseIcon"
+      class="bg-white dark:bg-gray-800"
+    >
+      <van-cell-group class="bg-white dark:bg-gray-800">
+        <van-cell
+          title="Profile "
+          class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+        >
+          <button
+            @click="AppLogout"
+            class="block w-full text-left px-3 py-2 text-sm cursor-pointer transition duration-300 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            <van-icon name="close" />
+            Sign Out
+          </button>
+        </van-cell>
+      </van-cell-group>
+    </van-popup>
   </div>
 </template>
 
@@ -408,7 +468,6 @@ const AppLogout = async () => {
 }
 
 const loginPage = () => {
-  // This seems to redirect to /chat based on your template, confirm this is intended
   router.push('/chat')
 }
 

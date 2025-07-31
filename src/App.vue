@@ -1,66 +1,70 @@
 <template>
-  <div
-    class="w-full transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white"
-  >
-    <AppNavbar
-      class="top-0 left-0 right-0 z-40 shadow-md hidden sm:block"
-      @open-search-dialog="showSearchDialog = true"
-      v-if="!$route.meta.hideLayout"
-    />
-
-    <SearchDialog
-      :isVisible="showSearchDialog"
-      :searchTerm="currentSearchTerm"
-      @update:searchTerm="updateSearchTerm"
-      @close="showSearchDialog = false"
-      @search="handleSearchSubmit"
-    />
-
+  <van-config-provider :theme="$appThem.value ? 'dark' : 'light'">
     <div
-      v-if="isLoading"
-      class="fixed inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 z-50"
+      class="w-full transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white"
     >
-      <div class="spinner"></div>
-    </div>
+      <AppNavbar
+        class="top-0 left-0 right-0 z-40 shadow-md"
+        @open-search-dialog="showSearchDialog = true"
+        v-if="!$route.meta.hideLayout"
+      />
 
-    <transition
-      name="slide"
-      mode="out-in"
-      @before-enter="startLoading"
-      @after-enter="stopLoading"
-      class="mt-10"
-    >
-      <div v-if="$route.meta.hideLayout" class="relative w-full min-h-screen">
-        <router-view :key="$route.path" />
-      </div>
+      <SearchDialog
+        :isVisible="showSearchDialog"
+        :searchTerm="currentSearchTerm"
+        @update:searchTerm="updateSearchTerm"
+        @close="showSearchDialog = false"
+        @search="handleSearchSubmit"
+      />
 
       <div
-        v-else
-        class="relative mx-auto container flex gap-4 px-0 md:px-4 flex-col lg:flex-row pt-10"
+        v-if="isLoading"
+        class="fixed inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 z-50"
       >
-        <SidebarNav
-          v-if="!$route.meta.fullPage"
-          :navItems="navItems"
-          class="sticky top-[60px] h-[calc(80vh-30px)] overflow-y-auto z-10 w-48 bg-white dark:bg-gray-800 p-4 self-start"
-        />
+        <div class="spinner"></div>
+      </div>
 
-        <div class="flex-1 py-2 -mt-6">
-          <el-scrollbar class="h-[200vh]">
-            <router-view :key="$route.path" />
-            <div class="mt-4" v-if="!$route.meta.fullPage">
-              <PostCard v-for="post in fakePosts" :key="post.id" :post="post" class="mb-4" />
-            </div>
-          </el-scrollbar>
+      <transition
+        name="slide"
+        mode="out-in"
+        @before-enter="startLoading"
+        @after-enter="stopLoading"
+        class="mt-10"
+      >
+        <div v-if="$route.meta.hideLayout" class="relative w-full min-h-screen">
+          <router-view :key="$route.path" />
         </div>
 
-        <EventCard
-          :navItems="navItems"
-          v-if="!$route.meta.fullPage"
-          class="sticky top-[60px] h-[calc(100vh-30px)] ml-1 overflow-y-auto z-10 bg-white dark:bg-gray-900 p-2 shadow-md self-start"
-        />
-      </div>
-    </transition>
-  </div>
+        <div
+          v-else
+          class="relative mx-auto container flex gap-4 px-0 md:px-4 flex-col lg:flex-row pt-10"
+        >
+          <SidebarNav
+            v-if="!$route.meta.fullPage"
+            :navItems="navItems"
+            class="sticky top-[60px] h-[calc(80vh-30px)] overflow-y-auto z-10 w-36 bg-white dark:bg-gray-800 p-4 self-start"
+          />
+
+          <div class="flex-1 py-2 -mt-6">
+            <el-scrollbar class="h-[200vh]">
+              <router-view :key="$route.path" />
+              <div class="mt-4" v-if="!$route.meta.fullPage && !route.path == '/'">
+                <PostCard v-for="post in fakePosts" :key="post.id" :post="post" class="mb-4" />
+              </div>
+            </el-scrollbar>
+          </div>
+
+          <EventCard
+            :navItems="navItems"
+            v-if="!$route.meta.fullPage"
+            class="hidden sm:block sticky top-[60px] h-[calc(100vh-30px)] ml-1 overflow-y-auto z-10 bg-white dark:bg-gray-900 p-2 shadow-md self-start"
+          />
+        </div>
+      </transition>
+
+      <AppTabBar class="lg:hidden" />
+    </div>
+  </van-config-provider>
 </template>
 
 <script>
@@ -75,10 +79,12 @@ import SearchDialog from './components/SearchDialog.vue'
 import PostCard from './components/PostCard.vue'
 import { fakePosts } from '@/services/data/fakePosts'
 import { navItems } from '@/services/data/menuItems'
+import AppTabBar from '@/layout/AppTabBar.vue'
 
 export default {
   name: 'MainLayout',
   components: {
+    AppTabBar,
     AppNavbar,
     SidebarNav,
     EventCard,

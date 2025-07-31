@@ -1,6 +1,6 @@
 <template>
   <div class="home-view p-0">
-    <div class="mb-8 relative overflow-hidden">
+    <div class="mb-8 relative overflow-hidden mt-5">
       <div
         class="flex transition-transform duration-500 ease-in-out"
         :style="{ transform: `translateX(-${currentIndex * (100 / cardsToShow)}%)` }"
