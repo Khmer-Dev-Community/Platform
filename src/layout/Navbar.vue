@@ -20,7 +20,7 @@
               aria-label="Search for topics and discussions"
               class="relative flex items-center w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-900 h-[35px] py-2 pl-3 pr-2 text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer"
             >
-              <span class="text-gray-400 mr-2">
+              <span class="text-gray-400 mr-2 mt-2">
                 <el-icon><Search /></el-icon>
               </span>
               <span class="text-gray-500 dark:text-gray-400 flex-1 text-sm">{{

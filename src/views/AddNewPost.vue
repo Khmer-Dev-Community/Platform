@@ -5,7 +5,7 @@
         Create New Post
       </h1>
 
-      <form @submit.prevent="submitPost" ref="DialogFormRef" :model="post">
+      <el-form ref="DialogFormRef" :model="post">
         <div class="mb-2">
           <label
             for="postTitle"
@@ -187,7 +187,7 @@
             Post
           </button>
         </div>
-      </form>
+      </el-form>
     </div>
   </div>
 </template>
@@ -200,7 +200,7 @@ import { PostService } from '@/services/post.service'
 
 const router = useRouter()
 const themeStore = useThemeStore()
-
+const DialogFormRef = ref()
 const post = ref({
   title: '',
   description: '',
@@ -226,7 +226,6 @@ const customToolbarConfig = {
       triggerEditorImageUpload()
     },
   },
-  // Add other custom toolbar items here if you have any
 }
 
 const handleVMdEditorUploadImage = async (event, insertImageCallback, files) => {
@@ -262,8 +261,6 @@ const handleVMdEditorUploadImage = async (event, insertImageCallback, files) => 
     alert(`Image upload failed! Check console for details.`)
   }
 }
-
-// --- Logic for the Custom Toolbar Button (Remains the same, but called by toolbar config) ---
 const triggerEditorImageUpload = () => {
   console.log('Custom image upload button (from action) clicked!')
   if (editorFileInput.value) {
@@ -278,7 +275,7 @@ const onEditorFileChange = (event) => {
   console.log("Hidden file input 'change' event triggered!")
   const files = event.target.files
   if (files.length > 0) {
-    if (myVMdEditor.value && typeof myVMdEditor.value.insertImage === 'function') {
+    if (myVMdEditor.value && typeof myVMdEditor.value?.insertImage === 'function') {
       handleVMdEditorUploadImage(null, myVMdEditor.value.insertImage, [files[0]])
     } else {
       console.error('VMdEditor instance or its insertImage method is not available.')
@@ -349,21 +346,14 @@ const removeTag = (index) => {
 }
 
 // --- Post Submission and Cancel ---
-const onSubmit = () => {
-  DialogFormRef.value?.validate(async (valid: boolean) => {
+const submitPost = () => {
+  DialogFormRef.value?.validate(async (valid) => {
     if (!valid) return
-
     try {
-      const isUpdate = state.formData.id !== 0
-      const apiMethod = isUpdate ? BonusService().UpdateEmployeeBonus : BonusService().CreateEmployeeBonus
-
-      const response = await apiMethod(state.formData)
-
+      const apiMethod = PostService().createPostContent
+      const response = await apiMethod(post.value)
       if (response?.statusCode === 200) {
         ElMessage.success(proxy?.$t(isUpdate ? 'alerts.updated' : 'alerts.success'))
-        emit('refresh')
-        closeDialog()
-        state.formData = { ...initialState } // Reset after success
       }
     } catch (error) {
       console.error(`Error ${isUpdate ? 'updating' : 'creating'}: ${error.message || error}`)
@@ -371,7 +361,7 @@ const onSubmit = () => {
     }
   })
 }
-const submitPost = () => {
+const submitPost_ = () => {
   console.log('New Post Data:', {
     title: post.value.title,
     description: post.value.description,
