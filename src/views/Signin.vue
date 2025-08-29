@@ -156,7 +156,7 @@ const handleLogin = async () => {
   })
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/account/auth02/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth02/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier: email.value, password: password.value }),
@@ -184,7 +184,7 @@ const handleLogin = async () => {
 // New method for GitHub Login
 const handleGithubLogin = () => {
   console.log('Initiating GitHub login...')
-  window.location.href = `${API_BASE_URL}/api/account/auth02/github/login`
+  window.location.href = `${API_BASE_URL}/api/auth02/github/login`
 }
 const logout = async () => {
   await userStore.clearUser()

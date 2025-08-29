@@ -18,6 +18,7 @@ export function PostService() {
       return request({
         url: '/posts/create',
         method: 'post',
+        withCredentials: true,
         data,
       })
     },

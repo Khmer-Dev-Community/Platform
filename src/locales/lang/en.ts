@@ -1,4 +1,7 @@
 export default {
+  alert: {
+    success: 'Successfull',
+  },
   input: {
     search: 'Search',
   },

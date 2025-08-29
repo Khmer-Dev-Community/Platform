@@ -180,7 +180,7 @@
             Cancel
           </button>
           <button
-            type="submit"
+            type="button"
             @click="submitPost"
             class="px-6 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-semibold transition-colors"
           >
@@ -192,12 +192,12 @@
   </div>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import axios from 'axios'
 import { PostService } from '@/services/post.service'
-
+import { ElMessage } from 'element-plus'
 const router = useRouter()
 const themeStore = useThemeStore()
 const DialogFormRef = ref()
@@ -213,7 +213,7 @@ const post = ref({
 const tagInput = ref('')
 const isDragging = ref(false)
 const fileInput = ref(null)
-
+const { proxy } = getCurrentInstance()
 const editorFileInput = ref(null)
 const myVMdEditor = ref(null)
 
@@ -346,32 +346,26 @@ const removeTag = (index) => {
 }
 
 // --- Post Submission and Cancel ---
-const submitPost = () => {
+const submitPost = async () => {
   DialogFormRef.value?.validate(async (valid) => {
     if (!valid) return
     try {
       const apiMethod = PostService().createPostContent
+      console.log(post.value)
       const response = await apiMethod(post.value)
-      if (response?.statusCode === 200) {
-        ElMessage.success(proxy?.$t(isUpdate ? 'alerts.updated' : 'alerts.success'))
+      console.log(response.data.statusCode)
+      if (response?.data?.statusCode === 200) {
+        ElMessage.success('Success')
+      } else {
+        ElMessage.error(response?.data?.message || 'An unexpected error occurred.')
       }
     } catch (error) {
-      console.error(`Error ${isUpdate ? 'updating' : 'creating'}: ${error.message || error}`)
+      console.error(error)
       ElMessage.error(proxy?.$t('alerts.failure') || 'An unexpected error occurred')
     }
   })
 }
-const submitPost_ = () => {
-  console.log('New Post Data:', {
-    title: post.value.title,
-    description: post.value.description,
-    imageFileName: post.value.imageFile ? post.value.imageFile.name : 'No featured image',
-    link: post.value.link,
-    tags: post.value.tags,
-  })
-  PostService().createPostContent(post)
-  //router.push('/')
-}
+
 const cancelPost = () => {
   if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
     router.back()

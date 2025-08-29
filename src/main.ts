@@ -57,6 +57,7 @@ async function bootstrap() {
   Locale.use('en-US', enUS)
   app.use(AuthCheckerPlugin)
   const userStore = useUserStore()
+  app.config.globalProperties.$t = i18n.global.t
   app.config.globalProperties.$isLoggedIn = computed(() => userStore.isLogged)
   app.config.globalProperties.$userData = computed(() => userStore.userData)
   //app.config.globalProperties.$appThem = computed(() => useThemeStore)

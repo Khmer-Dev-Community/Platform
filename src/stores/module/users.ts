@@ -69,7 +69,9 @@ export const useUserStore = defineStore('user', {
         }
       }
       try {
-        const response = await request.get<BackendResponse>('/account/auth02/profile')
+        const response = await request.get<BackendResponse>('/auth02/profile', {
+          withCredentials: true, // Add this line
+        })
         console.log(response.data)
         const apiResponseData = response.data
         this.setUser(
@@ -77,7 +79,6 @@ export const useUserStore = defineStore('user', {
             (apiResponseData.data as UserData) ||
             (apiResponseData as unknown as UserData),
         )
-
         this.isLogged = true
       } catch (error: any) {
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -102,7 +103,7 @@ export const useUserStore = defineStore('user', {
       await Storage.remove({ key: 'userData' })
       try {
         // Use your Axios instance 'request' for logout
-        await request.post('/api/client/logout')
+        // await request.post('/api/client/logout')
         console.log('Backend logout endpoint called via Axios to clear session/cookie.')
       } catch (error) {
         console.error('Error during backend logout API call via Axios:', error)

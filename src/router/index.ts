@@ -69,7 +69,7 @@ const router = createRouter({
       component: () => import('../views/AddNewPost.vue'),
       meta: {
         fullPage: false,
-        requiresAuth: true, // <-- THIS ROUTE REQUIRES AUTHENTICATION
+        requiresAuth: true,
       },
     },
     {
