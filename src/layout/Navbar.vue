@@ -137,7 +137,7 @@
               class="absolute right-0 mt-2 w-48 border rounded-md shadow-lg z-10 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 profile-dropdown-content"
             >
               <router-link
-                to="/profile"
+                :to="'/@'+$userData?.username "
                 @click="dropDownprofile = false"
                 class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
@@ -318,7 +318,7 @@
               class="absolute right-0 mt-2 w-48 border rounded-md shadow-lg z-10 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 profile-dropdown-content"
             >
               <router-link
-                to="/profile"
+                :to="'/@'+$userData?.username"
                 @click="dropDownprofile = false"
                 class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               >

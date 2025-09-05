@@ -1,6 +1,6 @@
 <template>
   <div class="dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100 py-2 p-1 px-2">
-    <div class="mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden p-4">
+    <div class="mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden p-2 lg:p-6">
       <button
         @click="$router.back()"
         class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4 flex items-center space-x-2"
@@ -11,7 +11,7 @@
 
       <div v-if="post">
         <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-0">
             <img
               :src="post.author?.avatar_url"
               :alt="post.auth?.first_name + ' Avatar'"
@@ -43,14 +43,6 @@
           </button>
         </div>
 
-        <div v-if="post.featured_image_url" class="mb-4">
-          <img
-            :src="post.featured_image_url"
-            :alt="post.Title"
-            class="w-full h-auto object-cover rounded-lg shadow-sm"
-          />
-        </div>
-
         <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-3">{{ post.Title }}</h1>
         <div
           v-if="post.description"
@@ -73,7 +65,7 @@
         >
           <span class="flex items-center space-x-1">
             <i class="fas fa-eye"></i>
-            <span>{{ post?.ViewCount }} Views</span>
+            <span>{{ post?.view_count }} Views</span>
           </span>
           <span class="flex items-center space-x-1">
             <i class="fas fa-arrow-up"></i>
@@ -128,57 +120,60 @@
   </div>
 </template>
 
+<style >
+.github-markdown-body{
+  padding:4px!important
+}
+</style>
+
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { PostService } from '@/services/post.service'
-import CommentItem from '@/components/CommentItem.vue'
-import VMdEditorViewer from '@kangc/v-md-editor/lib/preview'
-const route = useRoute()
-const post = ref(null)
-const newCommentText = ref('')
-const currentReplyingToId = ref(null)
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
+import { PostService } from '@/services/post.service';
+import CommentItem from '@/components/CommentItem.vue';
+import VMdEditorViewer from '@kangc/v-md-editor/lib/preview';
+import { useSelectedPostStore } from '@/stores/emit/post.emit';
+
+const selectedPostStore = useSelectedPostStore();
+const route = useRoute();
+const post = ref(null);
+const newCommentText = ref('');
+const currentReplyingToId = ref(null);
 
 const formatCount = (num) => {
   if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
+    return (num / 1000).toFixed(1) + 'K';
   }
-  return num ? num.toString() : '0'
-}
+  return num ? num.toString() : '0';
+};
 
 const timeAgo = (date) => {
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000)
-
-  let interval = seconds / 31536000
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  let interval = seconds / 31536000;
   if (interval > 1) {
-    return Math.floor(interval) + ' years ago'
+    return Math.floor(interval) + ' years ago';
   }
-
-  interval = seconds / 2592000
+  interval = seconds / 2592000;
   if (interval > 1) {
-    return Math.floor(interval) + ' months ago'
+    return Math.floor(interval) + ' months ago';
   }
-
-  interval = seconds / 86400
+  interval = seconds / 86400;
   if (interval > 1) {
-    return Math.floor(interval) + ' days ago'
+    return Math.floor(interval) + ' days ago';
   }
-
-  interval = seconds / 3600
+  interval = seconds / 3600;
   if (interval > 1) {
-    return Math.floor(interval) + ' hours ago'
+    return Math.floor(interval) + ' hours ago';
   }
-
-  interval = seconds / 60
+  interval = seconds / 60;
   if (interval > 1) {
-    return Math.floor(interval) + ' minutes ago'
+    return Math.floor(interval) + ' minutes ago';
   }
+  return 'just now';
+};
 
-  return 'just now'
-}
 const addComment = () => {
-  if (newCommentText.value.trim() === '') return
-
+  if (newCommentText.value.trim() === '') return;
   const newComment = {
     id: 'comment-' + Date.now(),
     avatar: 'https://randomuser.me/api/portraits/men/99.jpg',
@@ -187,32 +182,41 @@ const addComment = () => {
     content: newCommentText.value.trim(),
     upvotes: 0,
     replies: [],
-  }
-
-  post.value.discussion.unshift(newComment)
-  newCommentText.value = ''
-  post.value.comments++
-}
-
+  };
+  post.value.discussion.unshift(newComment);
+  newCommentText.value = '';
+  post.value.comments++;
+};
 const getFeedPostDetail = async () => {
   try {
-    const id = route.params.id
-    const response = await PostService().getPostContentByID(id)
+    const username = route.params.username;
+    const slug = route.params.slug;
+    const response = await PostService().getPostContentBySlug(slug); 
     if (response?.data.statusCode === 200) {
-      post.value = response.data.data
+      post.value = response.data.data;
     }
   } catch (err) {
-    console.error(err)
+    console.error(err);
   }
-}
+};
+const getFeedPostDetailByID = async () => {
+  try {
+    const id = route.params.id;
+    const response = await PostService().getPostContentByID(id);
+    if (response?.data.statusCode === 200) {
+      post.value = response.data.data;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
 
 const startReply = (commentId) => {
-  currentReplyingToId.value = commentId
-}
+  currentReplyingToId.value = commentId;
+};
 
 const handleAddReply = ({ parentId, replyContent }) => {
-  if (replyContent.trim() === '') return
-
+  if (replyContent.trim() === '') return;
   const newReply = {
     id: 'reply-' + Date.now(),
     avatar: 'https://randomuser.me/api/portraits/men/99.jpg',
@@ -221,29 +225,33 @@ const handleAddReply = ({ parentId, replyContent }) => {
     content: replyContent.trim(),
     upvotes: 0,
     replies: [],
-  }
+  };
 
   const findAndAddReply = (comments, targetId, reply) => {
     for (const comment of comments) {
       if (comment.id === targetId) {
-        comment.replies.push(reply)
-        return true
+        comment.replies.push(newReply);
+        return true;
       }
       if (comment.replies && comment.replies.length > 0) {
         if (findAndAddReply(comment.replies, targetId, reply)) {
-          return true
+          return true;
         }
       }
     }
-    return false
-  }
+    return false;
+  };
+  findAndAddReply(post.value.discussion, parentId, newReply);
+  currentReplyingToId.value = null;
+  post.value.comments++;
+};
 
-  findAndAddReply(post.value.discussion, parentId, newReply)
-  currentReplyingToId.value = null
-  post.value.comments++
-}
-
+// Check for data in the store on component mount
 onMounted(() => {
-  getFeedPostDetail()
-})
+  if (selectedPostStore.selectedPost) {
+    post.value = selectedPostStore.selectedPost;
+  } else {
+    getFeedPostDetail();
+  }
+});
 </script>

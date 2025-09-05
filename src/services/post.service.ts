@@ -18,6 +18,13 @@ export const PostService = () => {
         withCredentials: true,
       })
     },
+    getPostContentBySlug(slug: string) {
+      return request({
+        url: `/posts/slug/${slug}`,
+        method: 'get',
+        withCredentials: true,
+      })
+    },
     createPostContent(data: object) {
       return request({
         url: '/posts/create',

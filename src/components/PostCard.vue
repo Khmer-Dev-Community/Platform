@@ -33,15 +33,14 @@
       </button>
     </div>
 
-    <router-link :to="{ name: 'PostDetail', params: { id: post.id } }" class="block cursor-pointer">
-      <div class="flex items-start mb-4">
+      <div class="flex items-start mb-4 block cursor-pointer" @click="selectPost(post)">
         <div class="flex-1">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-50 mb-1">
             {{ post.title }}
           </h3>
           <p
             v-if="post.description"
-            class="text-gray-700 dark:text-gray-300 text-sm mb-2 leading-relaxed line-clamp-3 mt-5"
+            class="text-gray-700 dark:text-gray-300 text-sm mb-2 leading-relaxed line-clamp-4 mt-5"
           >
             {{ post.description }}
           </p>
@@ -56,17 +55,17 @@
             {{ post.link }}
           </a>
         </div>
-        <div v-if="post.featured_image_url" class="ml-20 flex-shrink-0">
+        <div v-if="post.featured_image_url" class="ml-1 lg:ml-20 flex-shrink-0">
           <img
             :src="post.featured_image_url"
             :alt="post.title"
-            class="w-64 h-48 object-cover rounded-md"
+            class="w-36 h-36 object-cover rounded-md lg:w-56 lg:h-36"
           />
         </div>
       </div>
-    </router-link>
+  
 
-    <div class="flex items-center space-x-4 text-gray-600 dark:text-gray-400 text-sm">
+    <div class="flex items-center space-x-4 text-gray-600 dark:text-gray-400 text-sm border-t  border-gray-200 p-2">
       <button
         @click.stop="handleUpvote(post)"
         class="flex items-center space-x-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
@@ -101,8 +100,10 @@
 
 <script setup>
 import { defineProps } from 'vue'
-import { useRouter } from 'vue-router' // Import useRouter
-
+import { useRouter } from 'vue-router' 
+import { useSelectedPostStore } from '@/stores/emit/post.emit';
+const selectedPostStore = useSelectedPostStore();
+const router = useRouter() // Initialize useRouter
 const props = defineProps({
   post: {
     type: Object,
@@ -122,6 +123,17 @@ const props = defineProps({
     }),
   },
 })
+const selectPost = (post) => {
+ 
+  selectedPostStore.setSelectedPost(post);
+  router.push({
+    name: 'PostDetail',
+    params: {
+      username: post.author.username, // Assuming post.author.username exists
+      slug: post.slug
+    }
+  });
+};
 const timeAgo = (date) => {
   const seconds = Math.floor((new Date() - new Date(date)) / 1000)
 
@@ -152,7 +164,7 @@ const timeAgo = (date) => {
 
   return 'just now'
 }
-const router = useRouter() // Initialize useRouter
+
 
 // Helper function to format large numbers (e.g., 8,2K)
 const formatCount = (num) => {

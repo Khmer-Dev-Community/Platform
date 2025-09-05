@@ -47,6 +47,14 @@ const router = createRouter({
         requiresAuth: true, // <-- Protect Profile route as well
       },
     },
+     {
+      path: '/@:username',
+      name: 'profile',
+      component: () => import('../views/Profile.vue'),
+      meta: {
+        fullPage: false,
+      },
+    },
     {
       path: '/member',
       name: 'member',
@@ -56,8 +64,16 @@ const router = createRouter({
       },
     },
     {
-      path: '/post/:id', // Example route parameter for post ID
+      path: '/@:username/:slug',
       name: 'PostDetail',
+      component: () => import('../views/PostDetail.vue'),
+      meta: {
+        fullPage: false,
+      },
+    },
+        {
+      path: '/post/:id', // Example route parameter for post ID
+      name: 'PostDetails',
       component: () => import('../views/PostDetail.vue'),
       meta: {
         fullPage: false,

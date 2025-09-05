@@ -5,7 +5,7 @@ export const navItems = [
     text: 'My profile',
     icon: 'far fa-user-circle',
     active: false,
-    route: '/profile',
+    route: '@me',
     tag: 'welcome',
   },
   {
