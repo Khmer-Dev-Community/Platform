@@ -5,26 +5,29 @@
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center space-x-2">
         <img
-          :src="post.avatar"
-          :alt="post.username + ' Avatar'"
+          :src="post.author?.avatar_url"
+          :alt="post.auth?.first_name + ' Avatar'"
           class="w-8 h-8 rounded-full object-cover"
         />
         <div class="text-sm">
-          <span class="font-semibold text-gray-800 dark:text-gray-100">{{ post.username }}</span>
-          <span class="text-gray-500 dark:text-gray-400"> • {{ post.timeAgo }}</span>
+          <span class="font-semibold text-gray-800 dark:text-gray-100">{{
+            post.author?.first_name
+          }}</span
+          ><br />
+          @{{ post.author?.username }}
+          <span class="text-gray-500 dark:text-gray-400"> • {{ timeAgo(post.created_at) }}</span>
         </div>
       </div>
       <button
         v-if="!post.isFollowing"
-        @click.stop="toggleFollow(post)"
-        class="bg-purple-500 hover:bg-purple-600 text-white dark:text-gray-100 px-3 py-1 rounded-full text-sm font-medium transition-colors"
+        class="bg-blue-500 dark:bg-gray-600 px-3 py-1 rounded-full text-sm font-small"
+        style="color: white"
       >
         Follow +
       </button>
       <button
         v-else
-        @click.stop="toggleFollow(post)"
-        class="border border-purple-500 text-purple-500 dark:text-purple-400 px-3 py-1 rounded-full text-sm font-medium transition-colors"
+        class="border border-purple-500 text-purple-500 dark:text-purple-400 px-3 py-1 rounded-full text-sm font-small transition-colors"
       >
         Following
       </button>
@@ -38,7 +41,7 @@
           </h3>
           <p
             v-if="post.description"
-            class="text-gray-700 dark:text-gray-300 text-sm mb-2 leading-relaxed line-clamp-3"
+            class="text-gray-700 dark:text-gray-300 text-sm mb-2 leading-relaxed line-clamp-3 mt-5"
           >
             {{ post.description }}
           </p>
@@ -53,8 +56,12 @@
             {{ post.link }}
           </a>
         </div>
-        <div v-if="post.image" class="ml-4 flex-shrink-0">
-          <img :src="post.image" :alt="post.title" class="w-24 h-24 object-cover rounded-md" />
+        <div v-if="post.featured_image_url" class="ml-20 flex-shrink-0">
+          <img
+            :src="post.featured_image_url"
+            :alt="post.title"
+            class="w-64 h-48 object-cover rounded-md"
+          />
         </div>
       </div>
     </router-link>
@@ -65,14 +72,14 @@
         class="flex items-center space-x-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
       >
         <i class="fas fa-arrow-up"></i>
-        <span>{{ formatCount(post.upvotes) }}</span>
+        <span>{{ formatCount(1) }}</span>
       </button>
       <button
         @click.stop="handleCommentClick(post)"
         class="flex items-center space-x-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
       >
         <i class="far fa-comment-alt"></i>
-        <span>{{ formatCount(post.comments) }}</span>
+        <span>{{ formatCount(1) }}</span>
       </button>
       <button
         @click.stop="handleShare(post)"
@@ -102,20 +109,49 @@ const props = defineProps({
     required: true,
     default: () => ({
       id: '',
-      avatar: 'https://via.placeholder.com/32/32', // Default avatar
+      avatar: 'https://via.placeholder.com/32/32',
       username: 'user_name',
       timeAgo: 'X hr ago',
       title: 'Post Title',
-      description: null, // Can be null for posts with just a title/link
-      link: null, // URL for external link
-      image: null, // URL for thumbnail image
+      description: null,
+      link: null,
+      image: null,
       upvotes: 0,
       comments: 0,
       isFollowing: false,
     }),
   },
 })
+const timeAgo = (date) => {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000)
 
+  let interval = seconds / 31536000
+  if (interval > 1) {
+    return Math.floor(interval) + ' years ago'
+  }
+
+  interval = seconds / 2592000
+  if (interval > 1) {
+    return Math.floor(interval) + ' months ago'
+  }
+
+  interval = seconds / 86400
+  if (interval > 1) {
+    return Math.floor(interval) + ' days ago'
+  }
+
+  interval = seconds / 3600
+  if (interval > 1) {
+    return Math.floor(interval) + ' hours ago'
+  }
+
+  interval = seconds / 60
+  if (interval > 1) {
+    return Math.floor(interval) + ' minutes ago'
+  }
+
+  return 'just now'
+}
 const router = useRouter() // Initialize useRouter
 
 // Helper function to format large numbers (e.g., 8,2K)
@@ -128,14 +164,7 @@ const formatCount = (num) => {
 
 // --- Action handlers for engagement buttons ---
 const toggleFollow = (post) => {
-  // In a real app, you would emit an event or dispatch an action to a store
-  // to update the `isFollowing` status and persist it.
-  // For now, let's just log it.
   console.log(`Toggling follow for ${post.username}. Current status: ${post.isFollowing}`)
-  // If you need immediate visual feedback, the 'post' prop would need to be mutable
-  // (e.g., if you're using a shallow copy or a store that updates the original object)
-  // or you'd need to emit an event to the parent to update the array.
-  // post.isFollowing = !post.isFollowing; // This directly modifies prop, generally not recommended
 }
 
 const handleUpvote = (post) => {
@@ -145,9 +174,6 @@ const handleUpvote = (post) => {
 
 const handleCommentClick = (post) => {
   console.log(`Viewing comments for post: ${post.title}`)
-  // Option 1: Navigate to post detail and scroll to comments (more complex)
-  // Option 2: Simply navigate to post detail (current implementation will do this via router-link)
-  // router.push({ name: 'PostDetail', params: { id: post.id } }); // This is what router-link does
 }
 
 const handleShare = (post) => {

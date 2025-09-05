@@ -1,7 +1,9 @@
 // src/stores/module/users.ts
 import { defineStore } from 'pinia'
 import { Storage } from '@capacitor/storage'
+import Cookies from 'universal-cookie'
 
+const cookies = new Cookies()
 import request from '@/utils/request'
 import type { BackendResponse } from '@/utils/request'
 
@@ -61,18 +63,17 @@ export const useUserStore = defineStore('user', {
         try {
           cachedUserData = JSON.parse(userDataString)
           this.userData = cachedUserData
-          this.isLogged = true // Optimistic, will be confirmed by API call
+          this.isLogged = true
         } catch (e) {
           console.error('Failed to parse cached user data from storage:', e)
           this.userData = null
-          this.isLogged = false // Reset if cached data is corrupt
+          this.isLogged = false
         }
       }
       try {
         const response = await request.get<BackendResponse>('/auth02/profile', {
-          withCredentials: true, // Add this line
+          withCredentials: true,
         })
-        console.log(response.data)
         const apiResponseData = response.data
         this.setUser(
           (apiResponseData.user as UserData) ||
@@ -98,16 +99,12 @@ export const useUserStore = defineStore('user', {
     async clearUser(): Promise<void> {
       this.isLogged = false
       this.userData = null
-      // Remove local storage data (not the HttpOnly cookie itself)
-      await Storage.remove({ key: 'islogged' })
-      await Storage.remove({ key: 'userData' })
       try {
-        // Use your Axios instance 'request' for logout
-        // await request.post('/api/client/logout')
+        await Storage.remove({ key: 'islogged' })
+        await Storage.remove({ key: 'userData' })
         console.log('Backend logout endpoint called via Axios to clear session/cookie.')
       } catch (error) {
         console.error('Error during backend logout API call via Axios:', error)
-        // Frontend state is already cleared; this just logs the error if backend logout fails.
       }
     },
 

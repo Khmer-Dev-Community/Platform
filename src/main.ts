@@ -20,7 +20,6 @@ import AuthCheckerPlugin from '@/utils/global.install'
 import { useThemeStore } from './stores/theme'
 
 // Editor
-
 import VueMarkdownEditor from '@kangc/v-md-editor'
 import '@kangc/v-md-editor/lib/style/base-editor.css'
 import '@kangc/v-md-editor/lib/theme/style/github.css'
@@ -34,11 +33,23 @@ import 'prismjs/components/prism-css'
 import 'prismjs/components/prism-markup'
 import 'prismjs/components/prism-json'
 import 'prismjs/themes/prism-okaidia.css'
+
+// Previewer (Viewer)
+import VMdPreview from '@kangc/v-md-editor/lib/preview'
+import '@kangc/v-md-editor/lib/style/preview.css'
+
 VueMarkdownEditor.use(githubTheme, {
   Prism: Prism,
   Hljs: hljs,
 })
+
+// CRITICAL: Configure the previewer with a theme
+VMdPreview.use(githubTheme, {
+  Hljs: hljs,
+})
+
 VueMarkdownEditor.lang.use('en-US', enLocale)
+
 async function bootstrap() {
   await setupI18n()
   const app = createApp(App)
@@ -53,14 +64,17 @@ async function bootstrap() {
   app.use(ElementPlus)
   app.use(Vant)
   app.use(i18n)
+
+  // CRITICAL: Use both the editor and the previewer
   app.use(VueMarkdownEditor)
+  app.use(VMdPreview)
+
   Locale.use('en-US', enUS)
   app.use(AuthCheckerPlugin)
   const userStore = useUserStore()
   app.config.globalProperties.$t = i18n.global.t
   app.config.globalProperties.$isLoggedIn = computed(() => userStore.isLogged)
   app.config.globalProperties.$userData = computed(() => userStore.userData)
-  //app.config.globalProperties.$appThem = computed(() => useThemeStore)
   await userStore.loadUserAndToken()
   app.mount('#app')
 }

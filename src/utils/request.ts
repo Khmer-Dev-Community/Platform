@@ -52,8 +52,6 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response: AxiosResponse<BackendResponse>) => {
     const res = response.data
-    console.log(res)
-
     return response
   },
   (error: AxiosError<BackendErrorData>) => {
@@ -63,12 +61,12 @@ service.interceptors.response.use(
 
     // Handle authentication and session errors first
     if (statusCode === 401 || statusCode === 4001 || errorMessage.includes('Token expired')) {
-      ElMessageBox.alert('Your session has expired. Please log in again.', 'Warning', {
+      /*   ElMessageBox.alert('Your session has expired. Please log in again.', 'Warning', {
         confirmButtonText: 'Login',
       }).then(() => {
         userStore.clearUser()
         window.location.href = '/login'
-      })
+      })*/
     } else if (errorMessage.includes('Your Account login on other device')) {
       ElMessageBox.confirm(
         'Your account has been logged in on another device. Please log in again.',
@@ -93,7 +91,6 @@ service.interceptors.response.use(
       }
     }
 
-    // Always reject the promise to stop the chain and allow the calling function's catch block to run
     return Promise.reject(error)
   },
 )

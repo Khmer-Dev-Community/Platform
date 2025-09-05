@@ -80,10 +80,9 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import PostCard from '@/components/PostCard.vue'
 import InfoCard from '@/components/InfoCard.vue'
 import { fakePosts } from '@/services/data/fakePosts'
-
+import { PostService } from '@/services/post.service'
 // Configuration for how many cards to show at once
-const cardsToShow = 3 // Number of InfoCards visible at one time
-
+const cardsToShow = 3
 const infoCards = ref([
   {
     title: "It's Now Easier Than Ever to Hire the Right Xano Expert",
@@ -121,6 +120,19 @@ const infoCards = ref([
   },
 ])
 
+const latestPosts = ref([])
+const getNewFeed = async () => {
+  try {
+    const response = await PostService().getPostContent()
+    console.log(response.data.data)
+    if (response?.data.statusCode === 200) {
+      latestPosts.value = response.data.data
+      console.log(latestPosts.value)
+    }
+  } catch (err) {
+    console.log(err.Name)
+  }
+}
 const currentIndex = ref(0)
 let slideshowInterval = null
 
@@ -157,13 +169,14 @@ const stopSlideshow = () => {
 
 onMounted(() => {
   startSlideshow()
+  getNewFeed()
 })
 
 onUnmounted(() => {
   stopSlideshow()
 })
 
-const latestPosts = ref(fakePosts.slice(0, 3))
+//const latestPosts = ref(fakePosts.slice(0, 3))
 const recentActivity = ref(fakePosts.slice(3, 6))
 </script>
 

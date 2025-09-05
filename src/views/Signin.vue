@@ -140,7 +140,7 @@ const toggleShowPassword = () => {
 }
 
 onMounted(async () => {
-  await userStore.loadUserAndToken()
+  //await userStore.loadUserAndToken()
   if (userStore.isLogged) {
     console.log('User is logged in:', userStore.userData?.name)
     router.push('/') // Or '/dashboard' if you have one
@@ -152,7 +152,6 @@ onMounted(async () => {
 const handleLogin = async () => {
   console.log('Attempting login with:', {
     email: email.value,
-    // password: password.value, // Never log raw password in production
   })
 
   try {
@@ -163,7 +162,6 @@ const handleLogin = async () => {
     })
 
     const data = await response.json()
-
     if (response.ok) {
       // Assuming your backend sends back { token: "...", user: { ... } }
       await userStore.setToken(data.token)
@@ -189,7 +187,6 @@ const handleGithubLogin = () => {
 const logout = async () => {
   await userStore.clearUser()
   console.log('Logged out!')
-  // Optionally redirect to login page after logout
   router.push('/login')
 }
 </script>

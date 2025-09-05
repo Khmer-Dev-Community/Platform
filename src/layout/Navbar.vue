@@ -370,8 +370,10 @@ import { showNotify } from 'vant'
 import { useThemeStore } from '@/stores/theme'
 import { useUserStore, type UserData } from '@/stores/module/users'
 import { Search, Moon, Sunny, Plus } from '@element-plus/icons-vue'
+import Cookies from 'universal-cookie'
 
 const emit = defineEmits(['open-search-dialog'])
+const cookies = new Cookies(null, { path: '' })
 const instance = getCurrentInstance()
 const $isLoggedIn = computed<boolean>(
   () => instance?.appContext.config.globalProperties.$isLoggedIn?.value ?? false,
@@ -461,10 +463,11 @@ const selectLanguage = async (langCode: string) => {
 }
 
 const AppLogout = async () => {
-  await userStore.clearUser() // Call clearUser from Pinia store
+  cookies.remove('kdc.secure.token', { path: '/' })
+  await userStore.clearUser()
   showNotify({ type: 'success', message: 'Logout successful!' })
-  router.push('/login')
-  dropDownprofile.value = false // Close dropdown after logout
+  //router.push('/login')
+  dropDownprofile.value = false
 }
 
 const loginPage = () => {

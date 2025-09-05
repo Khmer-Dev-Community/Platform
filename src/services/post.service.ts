@@ -1,17 +1,21 @@
+// src/services/post.service.ts
 import request from '@/utils/request'
-export function PostService() {
+
+export const PostService = () => {
   return {
     getPostContent(params: object) {
       return request({
         url: '/posts/list',
         method: 'get',
         params,
+        withCredentials: true,
       })
     },
     getPostContentByID(paramId: number) {
       return request({
-        url: `/posts/${paramId}`,
+        url: `/posts/v/${paramId}`,
         method: 'get',
+        withCredentials: true,
       })
     },
     createPostContent(data: object) {

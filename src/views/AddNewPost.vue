@@ -6,132 +6,103 @@
       </h1>
 
       <el-form ref="DialogFormRef" :model="post">
+        <!-- Title -->
         <div class="mb-2">
           <label
             for="postTitle"
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >Post Title</label
           >
+            Post Title
+          </label>
           <input
             type="text"
             id="postTitle"
             v-model="post.title"
             placeholder="A compelling title for your post..."
-            class="w-full p-3 h-[40px] text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+            class="w-full p-3 h-[40px] text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white bg-gray-50 dark:bg-gray-700 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
             required
           />
         </div>
 
+        <!-- Description (Markdown Editor) -->
         <div class="mb-5">
           <label
             for="postDescription"
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >Description</label
           >
+            Description
+          </label>
           <v-md-editor
             ref="myVMdEditor"
             mode="edit"
             v-model="post.description"
             height="400px"
-            left-toolbar=" h bold italic strikethrough quote customImageUploadButton code "
+            left-toolbar="h bold italic strikethrough quote  ul ol customImageUploadButton  code "
             right-toolbar="preview fullscreen "
             :toolbar="customToolbarConfig"
             placeholder="Your content ..."
-            class="rounded-lg overflow-hidden border dark:bg-gray-700 border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+            class="rounded-lg overflow-hidden border dark:bg-gray-700 border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors mt-64"
             @upload-image="handleVMdEditorUploadImage"
           >
+            <template v-slot:customImageUploadButton>
+              <el-button @click="showFileManager = true" title="File Manager">
+                <el-icon><i-ep-folder-opened /></el-icon>
+              </el-button>
+            </template>
           </v-md-editor>
-          <input
-            ref="editorFileInput"
-            type="file"
-            accept="image/*"
-            @change="onEditorFileChange"
-            style="display: none"
-          />
+          <ColorPicker v-model="showColorPicker" @select-color="insertSelectedColor" />
+          <FileManagerDialog v-model="showFileManager" @select-image="insertSelectedImage" />
         </div>
 
+        <!-- Featured Image Upload -->
         <div class="mb-5">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >Featured Image (Optional)</label
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Featured Image (Optional)
+          </label>
+          <el-upload
+            v-model:file-list="fileList"
+            :class="{ 'hide-upload-card': fileList.length >= 1 }"
+            :action="uploadURL"
+            list-type="picture-card"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="handleChange"
+            :on-exceed="handleExceed"
+            :on-preview="handlePictureCardPreview"
+            :on-remove="handleRemove"
           >
-          <div
-            @dragover.prevent="onDragOver"
-            @dragleave.prevent="onDragLeave"
-            @drop.prevent="onDrop"
-            @click="triggerFileInput"
-            :class="{ 'border-purple-500 bg-purple-50': isDragging }"
-            class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <div class="space-y-1 text-center">
-              <svg
-                class="mx-auto h-12 w-12 text-gray-400"
-                stroke="currentColor"
-                fill="none"
-                viewBox="0 0 48 48"
-                aria-hidden="true"
-              >
-                <path
-                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <div class="flex text-sm text-gray-600 dark:text-gray-400">
-                <p>Drag and drop or</p>
-                <span class="ml-1 font-medium text-purple-600 hover:text-purple-500">
-                  upload a file
-                </span>
-                <input
-                  ref="fileInput"
-                  id="file-upload"
-                  name="file-upload"
-                  type="file"
-                  class="sr-only"
-                  @change="onFileChange"
-                  accept="image/*"
-                />
-              </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 10MB</p>
-            </div>
-          </div>
-          <div v-if="post.imagePreview" class="mt-4 flex items-center space-x-4">
-            <img
-              :src="post.imagePreview"
-              alt="Image preview"
-              class="w-32 h-32 object-cover rounded-md shadow-sm"
-            />
-            <button
-              @click="removeImage"
-              type="button"
-              class="text-red-500 hover:text-red-700 text-sm font-semibold"
-            >
-              Remove Image
-            </button>
-          </div>
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+          <el-dialog v-model="dialogVisible" title="Image Preview">
+            <img w-full :src="dialogImageUrl" alt="Preview Image" />
+          </el-dialog>
         </div>
 
+        <!-- External Link -->
         <div class="mb-5">
           <label
             for="postLink"
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >External Link (Optional)</label
           >
+            External Link (Optional)
+          </label>
           <input
             type="url"
             id="postLink"
             v-model="post.link"
             placeholder="e.g., https://yourarticle.com"
-            class="w-full p-3 h-[40px] text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+            class="w-full p-3 h-[40px] text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
           />
         </div>
 
+        <!-- Tags -->
         <div class="mb-6">
           <label
             for="postTags"
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >Tags (comma-separated)</label
           >
+            Tags (comma-separated)
+          </label>
           <input
             type="text"
             id="postTags"
@@ -139,7 +110,7 @@
             @keydown.enter.prevent="addTag"
             @blur="addTag"
             placeholder="Add tags like: programming, frontend, design"
-            class="w-full p-3 h-[40px] rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+            class="w-full p-3 h-[40px] rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
           />
           <div class="mt-3 flex flex-wrap gap-2">
             <span
@@ -166,11 +137,13 @@
             <span
               v-if="post.tags.length === 0 && tagInput.length === 0"
               class="text-gray-500 dark:text-gray-400 text-sm"
-              >No tags added yet.</span
             >
+              No tags added yet.
+            </span>
           </div>
         </div>
 
+        <!-- Actions -->
         <div class="flex justify-end space-x-4">
           <button
             type="button"
@@ -191,6 +164,7 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
@@ -198,170 +172,209 @@ import { useThemeStore } from '@/stores/theme'
 import axios from 'axios'
 import { PostService } from '@/services/post.service'
 import { ElMessage } from 'element-plus'
+import FileManagerDialog from '@/components/FileManager.vue'
+import ColorPicker from '@/components/ColorPicker.vue'
+import { Plus } from '@element-plus/icons-vue'
+
 const router = useRouter()
 const themeStore = useThemeStore()
 const DialogFormRef = ref()
+const showFileManager = ref(false)
+const showColorPicker = ref(false)
+const editorInstanceForColor = ref(null)
+const colorType = ref(null)
 const post = ref({
   title: '',
   description: '',
   imageFile: null,
-  imagePreview: null,
+  featured_image_url: null,
   link: '',
   tags: [],
 })
 
+const uploadURL = ref(import.meta.env.VITE_MINIO_URL + '/profile')
+const fileList = ref([])
+const dialogImageUrl = ref('')
+const dialogVisible = ref(false)
 const tagInput = ref('')
-const isDragging = ref(false)
-const fileInput = ref(null)
 const { proxy } = getCurrentInstance()
-const editorFileInput = ref(null)
 const myVMdEditor = ref(null)
+
+// save last insertImageCallback
+let insertImageCallbackRef = null
 
 const customToolbarConfig = {
   customImageUploadButton: {
     title: 'Upload Image',
     icon: 'v-md-icon-img',
-    action(editor) {
-      console.log('Toolbar config action triggered.')
-      triggerEditorImageUpload()
+    action() {
+      showFileManager.value = true
+    },
+  },
+  A: {
+    title: 'Text Color',
+    icon: 'v-md-icon-text-color', // replace with your icon
+    action(editorInstance) {
+      editorInstanceForColor.value = editorInstance.cm || editorInstance.codemirror
+      colorType.value = 'text'
+      showColorPicker.value = true
+    },
+  },
+  B: {
+    title: 'Background Color',
+    icon: 'v-md-icon-background-color', // replace with your icon
+    action(editorInstance) {
+      editorInstanceForColor.value = editorInstance.cm || editorInstance.codemirror
+      colorType.value = 'background'
+      showColorPicker.value = true
     },
   },
 }
 
-const handleVMdEditorUploadImage = async (event, insertImageCallback, files) => {
-  console.log('--- VMdEditor Image Upload Triggered ---')
-
-  const file = files[0]
-  if (!file) {
-    console.warn('VMdEditor: No file selected or received.')
+// from FileManagerDialog
+const insertSelectedImage = (url) => {
+  if (insertImageCallbackRef) {
+    insertImageCallbackRef({ url, desc: '' })
+  } else {
+    post.value.description += `\n![image](${url})\n`
+  }
+  showFileManager.value = false
+}
+const insertSelectedColor = (color) => {
+  const editor = editorInstanceForColor.value
+  if (!editor) {
+    ElMessage.error('Editor instance not available.')
     return
   }
+
+  const selection = editor.getSelection()
+  if (!selection) {
+    ElMessage.warning('Please select some text first.')
+    return
+  }
+
+  const wrappedText =
+    colorType.value === 'text'
+      ? `<span style="color:${color};">${selection}</span>`
+      : `<span style="background-color:${color};">${selection}</span>`
+
+  editor.replaceSelection(wrappedText)
+}
+
+const openColorPicker = (type, editorInstance) => {
+  // editorInstance is VMdEditor wrapper
+  // The actual CodeMirror instance is inside .cm or .codemirror
+  editorInstanceForColor.value = editorInstance.cm || editorInstance.codemirror
+  colorType.value = type
+  showColorPicker.value = true
+}
+
+// built-in upload handler
+const handleVMdEditorUploadImage = async (event, insertImageCallback, files) => {
+  insertImageCallbackRef = insertImageCallback
+  const file = files[0]
+  if (!file) return
+
   const formData = new FormData()
   formData.append('image', file)
 
   try {
-    const uploadUrl = 'YOUR_IMAGE_UPLOAD_API_ENDPOINT' // <<< IMPORTANT: Replace this with your actual backend image upload URL
-    const response = await axios.post(uploadUrl, formData, {
+    const response = await axios.post(uploadURL.value, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-
-    if (response.data && response.data.url) {
-      const imageUrl = response.data.url
-      const imageAlt = file.name
-      insertImageCallback({ url: imageUrl, desc: imageAlt })
-      console.log('--- VMdEditor Image Upload SUCCESS & Inserted ---')
+    if (response.data?.url) {
+      insertImageCallback({ url: response.data.url, desc: file.name })
     } else {
-      console.error('VMdEditor: Image upload failed: Backend did not return a valid URL.')
-      alert(
-        'Image upload failed: Server did not provide an image URL. Please check console for details.',
-      )
+      ElMessage.error('Server did not return image URL.')
     }
-  } catch (error) {
-    console.error('--- VMdEditor Image Upload ERROR ---', error)
-    alert(`Image upload failed! Check console for details.`)
-  }
-}
-const triggerEditorImageUpload = () => {
-  console.log('Custom image upload button (from action) clicked!')
-  if (editorFileInput.value) {
-    console.log('Triggering hidden file input click.')
-    editorFileInput.value.click()
-  } else {
-    console.error('editorFileInput ref is null.')
+  } catch (err) {
+    console.error(err)
+    ElMessage.error('Upload failed.')
   }
 }
 
-const onEditorFileChange = (event) => {
-  console.log("Hidden file input 'change' event triggered!")
-  const files = event.target.files
-  if (files.length > 0) {
-    if (myVMdEditor.value && typeof myVMdEditor.value?.insertImage === 'function') {
-      handleVMdEditorUploadImage(null, myVMdEditor.value.insertImage, [files[0]])
+// --- Featured Image Upload Logic ---
+const beforeUpload = (rawFile) => {
+  const isJPGorPNG = ['image/jpeg', 'image/png'].includes(rawFile.type)
+  const isLt2M = rawFile.size / 1024 / 1024 < 2
+  if (!isJPGorPNG) {
+    ElMessage.error('Upload picture must be JPG or PNG format!')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('Upload picture size can not exceed 2MB!')
+    return false
+  }
+  return true
+}
+
+const handleChange = async (uploadFile, uploadFiles) => {
+  if (!beforeUpload(uploadFile.raw)) {
+    const index = uploadFiles.findIndex((f) => f.uid === uploadFile.uid)
+    if (index !== -1) uploadFiles.splice(index, 1)
+    return
+  }
+  if (uploadFiles.length > 1) {
+    uploadFiles.splice(0, uploadFiles.length - 1)
+  }
+  const formData = new FormData()
+  formData.append('file', uploadFile.raw)
+  try {
+    const response = await axios.post(uploadURL.value, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    if (response.data?.statusCode === 200) {
+      const imageUrl = response.data.data.file_name
+      uploadFile.url = imageUrl
+      post.value.featured_image_url = imageUrl
+      uploadFile.status = 'success'
+      ElMessage.success('File uploaded successfully! 🎉')
     } else {
-      console.error('VMdEditor instance or its insertImage method is not available.')
-      alert('Editor is not ready to insert images. Please try again or refresh.')
+      ElMessage.error(response.data?.message || 'Upload failed.')
+      fileList.value = []
     }
-    event.target.value = ''
-  } else {
-    console.log('No file selected by user in the dialog.')
+  } catch (err) {
+    ElMessage.error('Upload failed. Please try again.')
+    fileList.value = []
   }
 }
 
-// --- Existing Logic for the Post's Featured Image (Drag & Drop / File Input) ---
-const triggerFileInput = () => {
-  fileInput.value.click()
+const handleExceed = () => ElMessage.warning('You can only upload a maximum of 1 image.')
+const handlePictureCardPreview = (file) => {
+  dialogImageUrl.value = file.url
+  dialogVisible.value = true
 }
-const onFileChange = (event) => {
-  const file = event.target.files[0]
-  handleFile(file)
-}
-const onDragOver = () => {
-  isDragging.value = true
-}
-const onDragLeave = () => {
-  isDragging.value = false
-}
-const onDrop = (event) => {
-  isDragging.value = false
-  const file = event.dataTransfer.files[0]
-  handleFile(file)
-}
-const handleFile = (file) => {
-  if (file && file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024) {
-    post.value.imageFile = file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      post.value.imagePreview = e.target.result
-    }
-    reader.readAsDataURL(file)
-  } else {
-    alert('Please upload a valid image (PNG, JPG, GIF) under 10MB.')
-    post.value.imageFile = null
-    post.value.imagePreview = null
-  }
-}
-const removeImage = () => {
-  post.value.imageFile = null
-  post.value.imagePreview = null
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
+const handleRemove = () => {
+  post.value.featured_image_url = null
 }
 
-// --- Existing Logic for Tags ---
 const addTag = () => {
   const tagsToAdd = tagInput.value
     .split(',')
     .map((tag) => tag.trim())
     .filter((tag) => tag !== '')
   tagsToAdd.forEach((newTag) => {
-    if (!post.value.tags.includes(newTag)) {
-      post.value.tags.push(newTag)
-    }
+    if (!post.value.tags.includes(newTag)) post.value.tags.push(newTag)
   })
   tagInput.value = ''
 }
-const removeTag = (index) => {
-  post.value.tags.splice(index, 1)
-}
+const removeTag = (index) => post.value.tags.splice(index, 1)
 
-// --- Post Submission and Cancel ---
 const submitPost = async () => {
-  DialogFormRef.value?.validate(async (valid) => {
+  if (!DialogFormRef.value) return
+  DialogFormRef.value.validate(async (valid) => {
     if (!valid) return
     try {
       const apiMethod = PostService().createPostContent
-      console.log(post.value)
       const response = await apiMethod(post.value)
-      console.log(response.data.statusCode)
       if (response?.data?.statusCode === 200) {
         ElMessage.success('Success')
       } else {
-        ElMessage.error(response?.data?.message || 'An unexpected error occurred.')
+        ElMessage.error(response?.data?.message || 'Unexpected error.')
       }
-    } catch (error) {
-      console.error(error)
-      ElMessage.error(proxy?.$t('alerts.failure') || 'An unexpected error occurred')
+    } catch (err) {
+      console.error(err)
+      ElMessage.error(proxy?.$t('alerts.failure') || 'Unexpected error')
     }
   })
 }
@@ -372,7 +385,6 @@ const cancelPost = () => {
   }
 }
 </script>
-
 <style>
 /* Existing V-MD-Editor dark mode styles and general styles */
 .dark .v-md-editor {
@@ -413,5 +425,33 @@ const cancelPost = () => {
 }
 .v-md-editor__preview {
   display: none !important;
+}
+
+.hide-upload-card .el-upload--picture-card {
+  display: none;
+}
+
+/* Dark Mode Overrides */
+html.dark .el-upload--picture-card,
+html.dark .el-upload-list__item {
+  background-color: #374151; /* A darker background for the card */
+  border-color: #4b5563; /* A darker border */
+}
+
+html.dark .el-upload--picture-card:hover,
+html.dark .el-upload-list__item:hover {
+  border-color: #6b7280; /* A slightly lighter border on hover */
+}
+
+html.dark .el-upload--picture-card .el-icon,
+html.dark .el-upload-list__item-actions {
+  color: #d1d5db; /* Light gray color for icons */
+}
+
+html.dark .el-upload-list__item-actions .el-icon {
+  color: #d1d5db; /* Ensure icons within the actions container are also light */
+}
+.v-md-editor--fullscreen {
+  margin-top: 60px !important;
 }
 </style>
