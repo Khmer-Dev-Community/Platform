@@ -5,7 +5,7 @@
   >
     <SidebarNavItem v-for="item in HomeNavItems" :key="item.text" :item="item" />
     <el-title class="text-base font-semibold" tag="b"> Welcome</el-title>
-    <SidebarNavItem v-for="item in WelcomNavItems" :key="item.text" :item="item" />
+    <SidebarNavItem v-for="item in WelcomNavItems" :key="item.text" :item="item" class="mt-2" />
     <el-title class="text-base font-semibold" tag="b"> Community</el-title>
     <SidebarNavItem v-for="item in communityNavItems" :key="item.text" :item="item" />
     <el-title class="text-base font-semibold" tag="b"> Product Updates</el-title>
@@ -16,28 +16,43 @@
 </template>
 
 <script setup>
-import { defineProps, computed } from 'vue'
+import { defineProps, computed, getCurrentInstance } from 'vue'
 import SidebarNavItem from './SidebarNavItem.vue'
+
+// Avoid using getCurrentInstance and proxy in production if possible.
+// A better practice is to pass a user data prop directly.
+const instance = getCurrentInstance()
+const proxy = instance.proxy
 
 const props = defineProps({
   navItems: {
+    // Renamed from navItem for better clarity
     type: Array,
     required: true,
   },
 })
+
+const filteredNavItems = computed(() => {
+  // Check if $userData exists and has an ID
+  if (!proxy.$userData.value || !proxy.$userData.value.id) {
+    return props.navItems.filter((item) => item.route !== '@me')
+  }
+  return props.navItems
+})
+
 const HomeNavItems = computed(() => {
-  return props.navItems.filter((item) => item.tag === 'home')
+  return filteredNavItems.value.filter((item) => item.tag === 'home')
 })
 const WelcomNavItems = computed(() => {
-  return props.navItems.filter((item) => item.tag === 'welcome')
+  return filteredNavItems.value.filter((item) => item.tag === 'welcome')
 })
 // Computed property to filter navItems for 'community' tag
 const communityNavItems = computed(() => {
-  return props.navItems.filter((item) => item.tag === 'community')
+  return filteredNavItems.value.filter((item) => item.tag === 'community')
 })
 
 // Computed property to filter navItems for 'release' tag
 const releaseNavItems = computed(() => {
-  return props.navItems.filter((item) => item.tag === 'release')
+  return filteredNavItems.value.filter((item) => item.tag === 'release')
 })
 </script>

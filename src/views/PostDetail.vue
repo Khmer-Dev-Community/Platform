@@ -6,11 +6,13 @@
         class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4 flex items-center space-x-2"
       >
         <i class="fas fa-arrow-left"></i>
-        <span>Back to Feed</span>
+        <span> Back </span>
       </button>
 
       <div v-if="post">
-        <div class="flex items-center justify-between mb-4">
+        <div
+          class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 py-2 -mt-2"
+        >
           <div class="flex items-center space-x-0">
             <img
               :src="post.author?.avatar_url"
@@ -18,13 +20,20 @@
               class="w-8 h-8 rounded-full object-cover"
             />
             <div class="text-sm">
-              <span class="font-semibold text-gray-800 dark:text-gray-100">{{
-                post.author?.first_name
-              }}</span
+              <router-link :to="`/@${post.author?.username}`" class="cursor-pointer bg-transparent">
+                <span class="font-semibold text-gray-800 dark:text-gray-100 text-base ml-2">{{
+                  post.author?.first_name
+                }}</span></router-link
               ><br />
-              @{{ post.author?.username }}
+              <router-link
+                :to="`/@${post.author?.username}`"
+                class="cursor-pointer bg-transparent text-sm ml-2"
+              >
+                @{{ post.author?.username }}
+              </router-link>
+
               <span class="text-gray-500 dark:text-gray-400">
-                • {{ timeAgo(post.created_at) }}</span
+                • {{ proxy.$timeAgo(post.created_at) }}</span
               >
             </div>
           </div>
@@ -43,10 +52,10 @@
           </button>
         </div>
 
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-3">{{ post.Title }}</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-3">{{ post.title }}</h1>
         <div
           v-if="post.description"
-          class="text-gray-700 dark:text-gray-300 text-base mb-4 leading-relaxed"
+          class="text-gray-700 dark:text-gray-400 text-base mb-4 leading-relaxed"
         >
           <v-md-editor-viewer :text="post.description"></v-md-editor-viewer>
         </div>
@@ -91,7 +100,8 @@
             <button
               @click="addComment"
               :disabled="!newCommentText.trim()"
-              class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-5 rounded-full text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="bg-blue-500 dark:bg-gray-600 px-4 py-2 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              style="color: white"
             >
               Post Comment
             </button>
@@ -106,6 +116,7 @@
             v-for="comment in post.discussion"
             :key="comment.id"
             :comment="comment"
+            :level="1"
             :currentReplyingToId="currentReplyingToId"
             @start-reply="startReply"
             @add-reply="handleAddReply"
@@ -120,138 +131,143 @@
   </div>
 </template>
 
-<style >
-.github-markdown-body{
-  padding:4px!important
+<style>
+.github-markdown-body {
+  padding: 4px !important;
 }
 </style>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
-import { PostService } from '@/services/post.service';
-import CommentItem from '@/components/CommentItem.vue';
-import VMdEditorViewer from '@kangc/v-md-editor/lib/preview';
-import { useSelectedPostStore } from '@/stores/emit/post.emit';
+import { ref, onMounted, computed, getCurrentInstance, h } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+import { PostService } from '@/services/post.service'
+import CommentItem from '@/components/CommentItem.vue'
+import VMdEditorViewer from '@kangc/v-md-editor/lib/preview'
+import { useSelectedPostStore } from '@/stores/emit/post.emit'
+import { CommentService } from '@/services/comment.service'
 
-const selectedPostStore = useSelectedPostStore();
-const route = useRoute();
-const post = ref(null);
-const newCommentText = ref('');
-const currentReplyingToId = ref(null);
+const instance = getCurrentInstance()
+const proxy = instance?.proxy
+
+const selectedPostStore = useSelectedPostStore()
+const router = useRoute()
+const route = useRouter()
+const post = ref(null)
+const newCommentText = ref('')
+const currentReplyingToId = ref(null)
 
 const formatCount = (num) => {
   if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
+    return (num / 1000).toFixed(1) + 'K'
   }
-  return num ? num.toString() : '0';
-};
+  return num ? num.toString() : '0'
+}
 
-const timeAgo = (date) => {
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-  let interval = seconds / 31536000;
-  if (interval > 1) {
-    return Math.floor(interval) + ' years ago';
+const addComment = async () => {
+  try {
+    if (proxy.$userData?.value?.id == undefined) {
+      ElMessageBox({
+        title: 'Message',
+        message: h('p', null, [h('span', null, 'Please login before you leave comment')]),
+        showCancelButton: true,
+        confirmButtonText: 'Login',
+        cancelButtonText: 'Cancel',
+        customClass: 'dark my-custom-message-box',
+        beforeClose: (action, instance, done) => {
+          if (action === 'confirm') {
+            route.push('/login')
+            done()
+          } else {
+            done()
+          }
+        },
+      })
+      return
+    }
+    if (newCommentText.value.trim() === '') return
+    const newComment = {
+      post_id: post.value.id,
+      author_id: proxy.$userData.value.id,
+      content: newCommentText.value.trim(),
+      upvotes: 0,
+    }
+    const response = await CommentService().createPostComment(post.value.id, newComment)
+    post.value.discussion.unshift(newComment)
+    newCommentText.value = ''
+    post.value.comments++
+    if (response?.data.statusCode === 200) {
+      post.value = response.data.data
+    }
+  } catch (err) {
+    console.error(err)
   }
-  interval = seconds / 2592000;
-  if (interval > 1) {
-    return Math.floor(interval) + ' months ago';
-  }
-  interval = seconds / 86400;
-  if (interval > 1) {
-    return Math.floor(interval) + ' days ago';
-  }
-  interval = seconds / 3600;
-  if (interval > 1) {
-    return Math.floor(interval) + ' hours ago';
-  }
-  interval = seconds / 60;
-  if (interval > 1) {
-    return Math.floor(interval) + ' minutes ago';
-  }
-  return 'just now';
-};
+}
 
-const addComment = () => {
-  if (newCommentText.value.trim() === '') return;
-  const newComment = {
-    id: 'comment-' + Date.now(),
-    avatar: 'https://randomuser.me/api/portraits/men/99.jpg',
-    username: 'Current_User',
-    timeAgo: 'Just now',
-    content: newCommentText.value.trim(),
-    upvotes: 0,
-    replies: [],
-  };
-  post.value.discussion.unshift(newComment);
-  newCommentText.value = '';
-  post.value.comments++;
-};
 const getFeedPostDetail = async () => {
   try {
-    const username = route.params.username;
-    const slug = route.params.slug;
-    const response = await PostService().getPostContentBySlug(slug); 
+    const slug = router.params.slug
+    const response = await PostService().getPostContentBySlug(slug)
     if (response?.data.statusCode === 200) {
-      post.value = response.data.data;
+      post.value = response.data.data
     }
   } catch (err) {
-    console.error(err);
+    console.error(err)
   }
-};
+}
 const getFeedPostDetailByID = async () => {
   try {
-    const id = route.params.id;
-    const response = await PostService().getPostContentByID(id);
+    const id = route.params.id
+    const response = await PostService().getPostContentByID(id)
     if (response?.data.statusCode === 200) {
-      post.value = response.data.data;
+      post.value = response.data.data
     }
   } catch (err) {
-    console.error(err);
+    console.error(err)
   }
-};
+}
 
 const startReply = (commentId) => {
-  currentReplyingToId.value = commentId;
-};
+  currentReplyingToId.value = commentId
+}
 
-const handleAddReply = ({ parentId, replyContent }) => {
-  if (replyContent.trim() === '') return;
+const handleAddReply = async ({ parentId, replyContent }) => {
+  console.log(replyContent)
+  if (replyContent.trim() === '') return
   const newReply = {
-    id: 'reply-' + Date.now(),
-    avatar: 'https://randomuser.me/api/portraits/men/99.jpg',
-    username: 'Current_User',
-    timeAgo: 'Just now',
+    post_id: post.value.id,
+    author_id: proxy.$userData.value.id,
     content: replyContent.trim(),
     upvotes: 0,
+    parent_comment_id: parentId,
     replies: [],
-  };
-
+  }
+  const response = await CommentService().createPostComment(post.value.id, newReply)
   const findAndAddReply = (comments, targetId, reply) => {
     for (const comment of comments) {
       if (comment.id === targetId) {
-        comment.replies.push(newReply);
-        return true;
+        comment.replies.push(newReply)
+        return true
       }
       if (comment.replies && comment.replies.length > 0) {
         if (findAndAddReply(comment.replies, targetId, reply)) {
-          return true;
+          return true
         }
       }
     }
-    return false;
-  };
-  findAndAddReply(post.value.discussion, parentId, newReply);
-  currentReplyingToId.value = null;
-  post.value.comments++;
-};
+    return false
+  }
+  findAndAddReply(post.value.discussion, parentId, newReply)
+  currentReplyingToId.value = null
+  post.value.comments++
+}
 
 // Check for data in the store on component mount
 onMounted(() => {
   if (selectedPostStore.selectedPost) {
-    post.value = selectedPostStore.selectedPost;
+    post.value = selectedPostStore.selectedPost
   } else {
-    getFeedPostDetail();
+    getFeedPostDetail()
   }
-});
+})
 </script>

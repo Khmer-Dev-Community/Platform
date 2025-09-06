@@ -1,5 +1,5 @@
 <template>
-  <van-config-provider :theme="$appThem.value ? 'dark' : 'light'">
+  <van-config-provider :theme="isDarkTheme ? 'dark' : 'light'">
     <div
       class="w-full transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white"
     >
@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, getCurrentInstance, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router' // Import useRoute
 import { useThemeStore } from '@/stores/theme' // Assuming this is still used for theme logic
 import AppNavbar from '@/layout/Navbar.vue'
@@ -80,6 +80,8 @@ import PostCard from './components/PostCard.vue'
 import { fakePosts } from '@/services/data/fakePosts'
 import { navItems } from '@/services/data/menuItems'
 import AppTabBar from '@/layout/AppTabBar.vue'
+const instance = getCurrentInstance()
+const proxy = instance?.proxy
 
 export default {
   name: 'MainLayout',
@@ -92,6 +94,7 @@ export default {
     PostCard,
   },
   setup() {
+    const isDarkTheme = computed(() => proxy?.$appTheme)
     const isLoading = ref(false)
     const router = useRouter()
     const route = useRoute() // Initialize useRoute
@@ -154,6 +157,7 @@ export default {
       updateSearchTerm,
       handleSearchSubmit,
       fakePosts,
+      isDarkTheme,
       route, // Make 'route' available in the template
     }
   },
@@ -208,5 +212,8 @@ html {
 }
 .font-english {
   font-family: 'Inter', sans-serif; /* Or your preferred English font */
+}
+.el-message-box {
+  margin-top: -180px;
 }
 </style>

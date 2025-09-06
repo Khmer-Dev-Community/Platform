@@ -12,11 +12,12 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { i18n, setupI18n } from './locales'
 // Styles
 import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import 'vant/lib/index.css'
 import App from './App.vue'
 import router from './router'
 import { useUserStore } from './stores/module/users'
-import AuthCheckerPlugin from '@/utils/global.install'
+//import AuthCheckerPlugin from '@/utils/global.install'
 import { useThemeStore } from './stores/theme'
 
 // Editor
@@ -37,6 +38,7 @@ import 'prismjs/themes/prism-okaidia.css'
 // Previewer (Viewer)
 import VMdPreview from '@kangc/v-md-editor/lib/preview'
 import '@kangc/v-md-editor/lib/style/preview.css'
+import GlobalPlugin from '@/utils/global.install'
 
 VueMarkdownEditor.use(githubTheme, {
   Prism: Prism,
@@ -70,12 +72,13 @@ async function bootstrap() {
   app.use(VMdPreview)
 
   Locale.use('en-US', enUS)
-  app.use(AuthCheckerPlugin)
+  //app.use(AuthCheckerPlugin)
   const userStore = useUserStore()
   app.config.globalProperties.$t = i18n.global.t
   app.config.globalProperties.$isLoggedIn = computed(() => userStore.isLogged)
-  app.config.globalProperties.$userData = computed(() => userStore.userData)
+  //app.config.globalProperties.$userData = computed(() => userStore.userData)
   await userStore.loadUserAndToken()
+  app.use(GlobalPlugin)
   app.mount('#app')
 }
 bootstrap()

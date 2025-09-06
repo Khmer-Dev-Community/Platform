@@ -36,3 +36,71 @@ export function formatDateTime(date: string): string {
     minute: '2-digit',
   })
 }
+
+export function timeAgo(date: string): string {
+  const now = new Date()
+  const past = new Date(date)
+  const seconds = Math.floor((now.getTime() - past.getTime()) / 1000)
+
+  if (seconds < 60) {
+    return 'just now'
+  }
+
+  const intervals = [
+    { label: 'year', seconds: 31536000 },
+    { label: 'month', seconds: 2592000 },
+    { label: 'day', seconds: 86400 },
+    { label: 'hour', seconds: 3600 },
+    { label: 'minute', seconds: 60 },
+  ]
+
+  for (const interval of intervals) {
+    const value = Math.floor(seconds / interval.seconds)
+    if (value >= 1) {
+      if (value === 1) {
+        return `1 ${interval.label} ago`
+      } else {
+        return `${value} ${interval.label}s ago`
+      }
+    }
+  }
+
+  return 'just now'
+}
+
+export const formatCount = (num: number) => {
+  // Check for invalid or non-numeric input
+  if (typeof num !== 'number' || isNaN(num)) {
+    return '0'
+  }
+
+  // 🟢 Handle numbers below 1000 directly without decimals
+  if (num < 1000) {
+    return num.toString()
+  }
+
+  const sign = Math.sign(num)
+  num = Math.abs(num)
+
+  const suffixes = [
+    { value: 1e9, symbol: 'B' },
+    { value: 1e6, symbol: 'M' },
+    { value: 1e3, symbol: 'K' },
+  ]
+
+  for (let i = 0; i < suffixes.length; i++) {
+    if (num >= suffixes[i].value) {
+      const formattedNum = num / suffixes[i].value
+
+      // Check if the number has a decimal part
+      if (formattedNum % 1 !== 0) {
+        return `${sign < 0 ? '-' : ''}${formattedNum.toFixed(2)}${suffixes[i].symbol}`
+      }
+
+      // If it's a whole number (e.g., 1.0K), return without a decimal
+      return `${sign < 0 ? '-' : ''}${formattedNum}${suffixes[i].symbol}`
+    }
+  }
+
+  return num.toString()
+}

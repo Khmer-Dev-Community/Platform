@@ -24,9 +24,9 @@
 </template>
 
 <script setup>
-import { defineProps, computed } from 'vue';
-import { useRoute } from 'vue-router';
-import { useUserStore } from '@/stores/module/users'; 
+import { defineProps, computed, getCurrentInstance } from 'vue'
+import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/module/users'
 
 const props = defineProps({
   item: {
@@ -39,35 +39,35 @@ const props = defineProps({
       badge: null,
     }),
   },
-});
+})
 
-const route = useRoute();
-const userStore = useUserStore();
+const route = useRoute()
+const userStore = useUserStore()
 
 const computedRoute = computed(() => {
-  if (props.item.route ==='@me') {
-    return `/@${userStore.userData?.username}`;
+  if (props.item.route === '@me') {
+    return `/@${userStore.userData?.username}`
   }
   // Otherwise, return the standard route string
-  return props.item.route;
-});
+  return props.item.route
+})
 
 const isActive = computed(() => {
   if (typeof props.item.route === 'object' && props.item.route.name) {
-    return route.name === props.item.route.name;
+    return route.name === props.item.route.name
   }
-  console.log(props.item.route)
+
   if (props.item.route === '/@me') {
-    return route.path === `/@${userStore.userData?.username}`;
+    return route.path === `/@${userStore.userData?.username}`
   }
   // Fallback to path matching for all other string routes
   if (typeof props.item.route === 'string') {
-    return route.path === props.item.route;
+    return route.path === props.item.route
   }
-  return false;
-});
+  return false
+})
 
-const activateItem = () => {};
+const activateItem = () => {}
 </script>
 
 <style scoped></style>

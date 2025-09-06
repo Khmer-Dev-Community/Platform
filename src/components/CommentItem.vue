@@ -1,20 +1,25 @@
 <template>
-  <div class="flex items-start space-x-3 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 shadow-sm">
+  <div
+    class="flex items-start space-x-3 bg-gray-10 dark:bg-gray-10 p-4 shadow-none border-b border-gray-50 dark:border-gray-700 -mt-5"
+  >
     <img
-      :src="comment.avatar"
-      :alt="comment.username + ' Avatar'"
+      :src="comment?.author.avatar_url"
+      :alt="comment?.author.username + ' Avatar'"
       class="w-8 h-8 rounded-full object-cover"
     />
     <div class="flex-1">
       <div class="flex items-baseline space-x-2 mb-1">
-        <span class="font-semibold text-gray-800 dark:text-gray-100 text-sm">{{
-          comment.username
+        <span class="text-gray-800 dark:text-gray-100 text-base">{{
+          comment?.author.first_name
         }}</span>
-        <span class="text-gray-500 dark:text-gray-400 text-xs">{{ comment.timeAgo }}</span>
+        <p class="text-gray-800 dark:text-gray-100 text-sm">@{{ comment?.author.username }}</p>
+        <span class="text-gray-500 dark:text-gray-400 text-xs">{{
+          proxy.$timeAgo(comment?.created_at)
+        }}</span>
       </div>
-      <p class="text-gray-700 dark:text-gray-300 text-sm mb-2">{{ comment.content }}</p>
+      <p class="text-gray-700 dark:text-gray-400 text-sm mb-2 mt-2">{{ comment.content }}</p>
 
-      <div class="flex items-center space-x-4 text-gray-500 dark:text-gray-400 text-xs">
+      <div class="flex items-center space-x-4 text-gray-500 dark:text-gray-400 text-xs mt-2">
         <button
           class="flex items-center space-x-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
         >
@@ -22,6 +27,7 @@
           <span>{{ comment.upvotes }}</span>
         </button>
         <button
+          v-if="level < 3"
           @click="startReplying"
           class="flex items-center space-x-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
         >
@@ -62,6 +68,7 @@
           v-for="reply in comment.replies"
           :key="reply.id"
           :comment="reply"
+          :level="level + 1"
           :currentReplyingToId="currentReplyingToId"
           @start-reply="startReply"
           @add-reply="handleAddReply"
@@ -72,16 +79,27 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue'
+import { ref, defineProps, defineEmits, getCurrentInstance } from 'vue'
+
+// 🟢 Re-import CommentItem for recursion
+import CommentItem from './CommentItem.vue'
+
+const { proxy } = getCurrentInstance()
 
 const props = defineProps({
   comment: {
     type: Object,
     required: true,
   },
+  // 🟢 Accept the new `level` prop
+  level: {
+    type: Number,
+    required: true,
+    default: 1,
+  },
   currentReplyingToId: {
     type: String,
-    default: null, // The ID of the comment/reply currently being replied to in the whole discussion tree
+    default: null,
   },
 })
 
@@ -90,9 +108,7 @@ const emit = defineEmits(['start-reply', 'add-reply'])
 const replyText = ref('')
 
 const startReplying = () => {
-  // Emit to parent that this comment is being replied to
   emit('start-reply', props.comment.id)
-  // Clear any existing reply text for this specific input
   replyText.value = ''
 }
 
@@ -102,17 +118,15 @@ const submitReply = () => {
       parentId: props.comment.id,
       replyContent: replyText.value.trim(),
     })
-    replyText.value = '' // Clear after submitting
+    replyText.value = ''
   }
 }
 
 const cancelReply = () => {
-  replyText.value = '' // Clear text
-  emit('start-reply', null) // Indicate no one is being replied to
+  replyText.value = ''
+  emit('start-reply', null)
 }
 
-// Re-expose the startReply and handleAddReply events from nested components
-// This allows replies to replies to propagate up to PostDetail.vue
 const startReply = (id) => {
   emit('start-reply', id)
 }
@@ -121,7 +135,3 @@ const handleAddReply = (payload) => {
   emit('add-reply', payload)
 }
 </script>
-
-<style scoped>
-/* No specific scoped styles needed if using only Tailwind utility classes */
-</style>
