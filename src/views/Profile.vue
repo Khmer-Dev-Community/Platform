@@ -3,49 +3,44 @@
     <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
       <div class="p-6 border-b border-gray-200 dark:border-gray-700 relative">
         <button
+          v-if="isOwnProfile"
+          @click="openEditProfileDialog"
           class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            class="w-6 h-6"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M11.078 2.25c-.917 0-1.605.438-1.748 1.107-.352 1.61-1.637 2.766-3.076 3.011L4.5 7.25c-.538.086-1 .59-1 1.25V12.75c0 .66.462 1.164 1 1.25l1.754.293c.352 1.61 1.637 2.766 3.076 3.011.143.669.831 1.107 1.748 1.107h1.844c.917 0 1.605-.438 1.748-1.107.352-1.61 1.637 2.766 3.076-3.011l1.754-.293c.538-.086 1-.59 1-1.25V8.5c0-.66-.462-1.164-1-1.25l-1.754-.293c-.352-1.61-1.637-2.766-3.076-3.011-.143-.669-.831-1.107-1.748-1.107H11.078zM9.75 8.625a2.25 2.25 0 104.5 0 2.25 2.25 0 00-4.5 0z"
-              clip-rule="evenodd"
-            />
-          </svg>
+          <el-icon style="font-size: 1.5rem;"><Tools /></el-icon>
         </button>
 
         <div class="flex items-center space-x-6 mb-4">
           <img
-            :src="userStore.userData?.avatar_url"
+            :src="userProfile?.avatar_url"
             alt="User Avatar"
             class="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-md"
           />
           <div>
             <h1 class="text-2xl font-bold dark:text-gray-50">
-              {{ userStore.userData?.fname }} {{ userStore.userData?.lname }}
+              {{ userProfile.fname }} {{ userProfile?.lname }}
             </h1>
             <p class="text-purple-600 dark:text-purple-400 text-sm">
-              @{{ userStore.userData?.username }}
+              @{{ userProfile?.username }}
             </p>
           </div>
         </div>
+
         <button
+          v-if="isOwnProfile"
           @click="openEditProfileDialog"
           class="bg-gray-200 dark:bg-gray-900 hover:bg-gray-500 text-blue dark:text-white font-semibold py-1 px-4 rounded-full text-sm transition-colors mb-2"
         >
           <i class="fas fa-edit mr-2"></i> Edit Profile
         </button>
+
         <p class="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
           {{
-            userStore.userData?.description ||
+            userProfile?.description ||
             'Full Stack Developer passionate about building amazing user experiences and scalable applications. Always learning, always coding.'
           }}
         </p>
+
         <div
           class="flex flex-wrap items-center text-gray-500 dark:text-gray-400 text-sm space-x-4 mb-4"
         >
@@ -58,8 +53,8 @@
             <span
               >Joined
               {{
-                userStore.userData?.createdAt
-                  ? new Date(userStore.userData.createdAt).toLocaleDateString('en-US', {
+                userProfile?.createdAt
+                  ? new Date(userProfile.createdAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                     })
@@ -257,9 +252,9 @@
     <el-dialog
       v-model="isEditProfileDialogOpen"
       title="Edit Profile"
-      width="600px"
+     
       :before-close="handleCloseDialog"
-      custom-class="dark:bg-gray-800 dark:text-gray-100 rounded-lg shadow-xl"
+      custom-class="dark:bg-gray-800 dark:text-gray-100 w-full lg:w-[600px]"
     >
       <el-form
         ref="editProfileFormRef"
@@ -319,19 +314,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect, reactive } from 'vue'
+import { ref, computed, watchEffect, reactive, onMounted } from 'vue'
 import { useUserStore, type UserData } from '@/stores/module/users'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { ProfileService } from '@/services/profile.service'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore() // Pinia store instance
-
+const route = useRoute()
 const activeTab = ref('posts') // Default active tab
-
+const userProfile = ref<UserData>({} as UserData) // Use UserData type
 // Dialog and Form State
 const isEditProfileDialogOpen = ref(false)
 const editFormData = ref<UserData>({} as UserData) // Initialize with an empty object, will be populated
 const editProfileFormRef = ref<FormInstance>() // Reference to the ElForm component for validation
+
+// Check if the displayed profile belongs to the logged-in user
+const isOwnProfile = computed(() => {
+  return  userStore.userData?.username === route.params.username;
+});
 
 // Form Validation Rules
 const formRules = reactive<FormRules>({
@@ -350,10 +352,41 @@ const formatCount = (num: number): string => {
   return num.toString()
 }
 
+// Get user profile based on route parameter
+const handleGetProfile = async () => {
+  const username: any = route.params.username
+  if (!username) {
+    // Handle case where username is not in the route
+    ElMessage.error('Username not found in route parameters.')
+    return;
+  }
+  
+  // Check if we are viewing our own profile, if so, use the store data
+  if (isOwnProfile.value) {
+    userProfile.value = userStore.userData || {} as UserData;
+    // Pre-populate form data for a smooth edit experience
+    editFormData.value = JSON.parse(JSON.stringify(userStore.userData));
+  } else {
+    // Fetch profile from the API for other users
+    const response = await ProfileService().getUserProfile(username)
+    if (response?.data.statusCode === 200) {
+      userProfile.value = response.data.data
+    } else {
+      ElMessage.error('Failed to load user profile.')
+      // Optionally, redirect to a 404 page
+    }
+  }
+}
+
 // Function to open the edit profile dialog
 const openEditProfileDialog = () => {
+  // Ensure this can only be called for the authenticated user's profile
+  if (!isOwnProfile.value) {
+    return;
+  }
+
   if (userStore.userData) {
-    // Deep copy user data to form data to prevent direct mutation of store state
+    // Ensure edit form data is always a fresh copy of the store data
     editFormData.value = JSON.parse(JSON.stringify(userStore.userData))
     isEditProfileDialogOpen.value = true
   } else {
@@ -368,7 +401,6 @@ const handleEditProfileSubmit = async () => {
   try {
     const valid = await editProfileFormRef.value.validate()
     if (valid) {
-      // Create a partial update object, sending only mutable fields
       const updatedProfile: Partial<UserData> = {
         fname: editFormData.value.fname,
         lname: editFormData.value.lname,
@@ -381,7 +413,9 @@ const handleEditProfileSubmit = async () => {
 
       if (success) {
         ElMessage.success('Profile updated successfully!')
-        isEditProfileDialogOpen.value = false // Close dialog on success
+        isEditProfileDialogOpen.value = false
+        // Update userProfile reactive ref with the new data from the store
+        userProfile.value = userStore.userData || {} as UserData;
       } else {
         ElMessage.error('Failed to update profile. Please try again.')
       }
@@ -403,26 +437,21 @@ const handleCloseDialog = () => {
   })
     .then(() => {
       isEditProfileDialogOpen.value = false
-      editProfileFormRef.value?.resetFields() // Reset form validation and fields
+      editProfileFormRef.value?.resetFields()
     })
     .catch(() => {
       // User cancelled closing the dialog
     })
 }
 
-// Watch for changes in userStore.userData to ensure the component reacts (optional, but good for reactivity)
+// Watch for route changes to fetch new profile data
 watchEffect(() => {
-  // If user data changes in store while dialog is open, update form data
-  if (isEditProfileDialogOpen.value && userStore.userData) {
-    editFormData.value = JSON.parse(JSON.stringify(userStore.userData))
-  }
+  handleGetProfile()
 })
 </script>
 
 <style scoped>
-/* Add any custom styles here if needed */
-/* Element Plus dialog and form styling can be customized via global CSS or Element Plus theming */
 .el-form-dialog .el-form-item {
-  margin-bottom: 20px; /* Adjust spacing */
+  margin-bottom: 20px;
 }
 </style>

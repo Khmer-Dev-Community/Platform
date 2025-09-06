@@ -1,7 +1,7 @@
 <template>
   <el-aside
     width="250px"
-    class="flex hidden sm:block flex-col min-h-[90vh] bg-white dark:bg-gray-700 dark:text-white rounded-md space-y-1 p-2 -ml-5 text-gray-700 text-sm font-normal select-none"
+    class="flex hidden flex-col min-h-[90vh] bg-white dark:bg-gray-700 dark:text-white rounded-md space-y-1 p-2 -ml-5 text-gray-700 text-sm font-normal select-none"
   >
     <SidebarNavItem v-for="item in HomeNavItems" :key="item.text" :item="item" />
     <el-title class="text-base font-semibold" tag="b"> Welcome</el-title>

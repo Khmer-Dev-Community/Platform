@@ -1,4 +1,4 @@
-import './assets/main.css'
+
 import { createApp, computed } from 'vue'
 import { createPinia } from 'pinia'
 // Emoji
@@ -6,6 +6,8 @@ import 'vue3-emoji-picker/css'
 // UI Libraries
 import ElementPlus from 'element-plus'
 import Vant, { Locale } from 'vant'
+import 'vant/lib/index.css'
+import './assets/main.css'
 import enUS from 'vant/es/locale/lang/en-US'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 // i18n
@@ -13,7 +15,7 @@ import { i18n, setupI18n } from './locales'
 // Styles
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
-import 'vant/lib/index.css'
+
 import App from './App.vue'
 import router from './router'
 import { useUserStore } from './stores/module/users'

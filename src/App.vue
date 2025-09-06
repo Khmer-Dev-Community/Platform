@@ -37,15 +37,15 @@
 
         <div
           v-else
-          class="relative mx-auto container flex gap-4 px-0 md:px-4 flex-col lg:flex-row pt-10"
+          class="relative mx-auto w-full lg:container flex gap-4 px-0 md:px-4 flex-col lg:flex-row pt-10"
         >
           <SidebarNav
             v-if="!$route.meta.fullPage"
             :navItems="navItems"
-            class="sticky top-[60px] h-[calc(80vh-30px)] overflow-y-auto z-10 w-36 bg-white dark:bg-gray-800 p-4 self-start"
+            class="hidden lg:block sticky top-[60px] h-[calc(80vh-30px)] overflow-y-auto z-10 bg-white dark:bg-gray-800 p-4 self-start"
           />
 
-          <div class="flex-1 py-2 -mt-6">
+          <div class="flex-1 py-2 -mt-6 w-full">
             <el-scrollbar class="h-[200vh]">
               <router-view :key="$route.path" />
               <div class="mt-4" v-if="!$route.meta.fullPage && !route.path == '/'">
@@ -57,12 +57,12 @@
           <EventCard
             :navItems="navItems"
             v-if="!$route.meta.fullPage"
-            class="hidden sm:block sticky top-[60px] h-[calc(100vh-30px)] ml-1 overflow-y-auto z-10 bg-white dark:bg-gray-900 p-2 shadow-md self-start"
+            class="hidden lg:block sticky top-[60px] h-[calc(100vh-30px)] ml-1 overflow-y-auto z-10 bg-white dark:bg-gray-900 p-2 self-start"
           />
         </div>
       </transition>
 
-      <AppTabBar class="lg:hidden" />
+      <AppTabBar class="lg:hidden" :isDarkTheme="isDarkTheme" />
     </div>
   </van-config-provider>
 </template>
@@ -70,7 +70,6 @@
 <script>
 import { ref, watch, onMounted, getCurrentInstance, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router' // Import useRoute
-import { useThemeStore } from '@/stores/theme' // Assuming this is still used for theme logic
 import AppNavbar from '@/layout/Navbar.vue'
 import SidebarNav from '@/layout/Sidebar.vue'
 import EventCard from '@/layout/EventCard.vue'
@@ -80,6 +79,7 @@ import PostCard from './components/PostCard.vue'
 import { fakePosts } from '@/services/data/fakePosts'
 import { navItems } from '@/services/data/menuItems'
 import AppTabBar from '@/layout/AppTabBar.vue'
+import { useThemeStore } from './stores/theme'
 const instance = getCurrentInstance()
 const proxy = instance?.proxy
 
@@ -94,7 +94,9 @@ export default {
     PostCard,
   },
   setup() {
-    const isDarkTheme = computed(() => proxy?.$appTheme)
+    const themeStore = useThemeStore();
+    const isDarkTheme = computed(() => themeStore.isDark)
+    
     const isLoading = ref(false)
     const router = useRouter()
     const route = useRoute() // Initialize useRoute
@@ -145,6 +147,7 @@ export default {
     onMounted(() => {
       // Ensure the correct font is applied on initial load
       applyLanguageFont(locale.value)
+      console.log(isDarkTheme)
     })
 
     return {
@@ -215,5 +218,16 @@ html {
 }
 .el-message-box {
   margin-top: -180px;
+}
+.van-config-provider--dark {
+  /* Tabbar */
+  --van-tabbar-background-color: #1f2937; /* Tailwind's gray-800 */
+  --van-tabbar-item-text-color: #d1d5db; /* Tailwind's gray-300 */
+  --van-tabbar-item-active-color: #a78bfa; /* Example purple for active state */
+
+  /* Other component variables you need */
+  --van-dialog-background-color: #1f2937;
+  --van-dialog-message-color: #d1d5db;
+  /* ... and so on */
 }
 </style>
