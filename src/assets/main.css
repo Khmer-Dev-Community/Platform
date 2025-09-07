@@ -147,14 +147,27 @@
    font-family: 'Roboto', sans-serif;
  }
 
-.van-config-provider--dark {
-  /* Tabbar */
-  --van-tabbar-background-color: #1f2937; /* Tailwind's gray-800 */
-  --van-tabbar-item-text-color: #d1d5db; /* Tailwind's gray-300 */
-  --van-tabbar-item-active-color: #a78bfa; /* Example purple for active state */
+ .van-config-provider--dark {
+   /* Tabbar */
+   --van-tabbar-background-color: #1f2937;
+   /* Tailwind's gray-800 */
+   --van-tabbar-item-text-color: #d1d5db;
+   /* Tailwind's gray-300 */
+   --van-tabbar-item-active-color: #a78bfa;
+   /* Example purple for active state */
 
-  /* Other component variables you need */
-  --van-dialog-background-color: #1f2937;
-  --van-dialog-message-color: #d1d5db;
-  /* ... and so on */
-}
+   /* Other component variables you need */
+   --van-dialog-background-color: #1f2937;
+   --van-dialog-message-color: #d1d5db;
+   /* ... and so on */
+ }
+
+ :deep(.el-dialog) {
+   --el-dialog-width: 95vw;
+ }
+
+ @media (min-width: 640px) {
+   :deep(.el-dialog) {
+     --el-dialog-width: 600px;
+   }
+ }

@@ -50,7 +50,7 @@
     </div>
 
     <section class="mb-8">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-4">Latest Posts</h2>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-8">Latest Posts</h2>
       <div class="space-y-4">
         <PostCard v-for="post in latestPosts" :key="post.id" :post="post" />
         <button

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="fixed shadow w-full z-50 transition-colors duration-300 bg-white dark:bg-gray-900 dark:text-white border-b border-white dark:border-gray-600"
-    style="z-index: 999999"
+    class="fixed shadow w-full z-20 transition-colors duration-300 bg-white dark:bg-gray-900 dark:text-white border-b border-white dark:border-gray-600"
+    style="z-index: 99"
   >
     <div class="relative mx-auto container px-1 sm:px-4 lg:px-6 hidden lg:block">
       <div class="relative flex items-center justify-between h-14">

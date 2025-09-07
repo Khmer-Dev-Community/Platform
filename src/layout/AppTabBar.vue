@@ -1,6 +1,6 @@
 <template>
   <van-config-provider :theme="isDarkTheme ? 'dark' : 'light'">
-    <div class="w-ful p-2 z-auto dark:bg-gray-800" style="z-index: 10000">
+    <div class="w-ful p-2 z-1000 dark:bg-gray-800" style="z-index: 10000">
       <van-tabbar
         v-model="active"
         @change="onChange"
@@ -19,10 +19,15 @@
     </div>
   </van-config-provider>
 </template>
+<style scoped>
+.van-tabbar--fixed {
+  z-index: 999;
+}
+</style>
 
 <script>
-import { ref } from 'vue';
-import { showToast } from 'vant';
+import { ref } from 'vue'
+import { showToast } from 'vant'
 
 export default {
   name: 'AppTabBar',
@@ -33,14 +38,14 @@ export default {
     },
   },
   setup(props) {
-    const active = ref(0);
+    const active = ref(0)
     const onChange = (index) => {
-      active.value = index;
-    };
+      active.value = index
+    }
     return {
       active,
       onChange,
-    };
+    }
   },
-};
+}
 </script>

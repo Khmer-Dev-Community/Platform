@@ -1,13 +1,13 @@
 <template>
   <div class="dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100 py-2">
-    <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-none overflow-hidden">
       <div class="p-6 border-b border-gray-200 dark:border-gray-700 relative">
         <button
           v-if="isOwnProfile"
           @click="openEditProfileDialog"
           class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
-          <el-icon style="font-size: 1.5rem;"><Tools /></el-icon>
+          <el-icon style="font-size: 1.5rem"><Tools /></el-icon>
         </button>
 
         <div class="flex items-center space-x-6 mb-4">
@@ -20,9 +20,7 @@
             <h1 class="text-2xl font-bold dark:text-gray-50">
               {{ userProfile.fname }} {{ userProfile?.lname }}
             </h1>
-            <p class="text-purple-600 dark:text-purple-400 text-sm">
-              @{{ userProfile?.username }}
-            </p>
+            <p class="text-purple-600 dark:text-purple-400 text-sm">@{{ userProfile?.username }}</p>
           </div>
         </div>
 
@@ -92,19 +90,27 @@
 
         <div class="flex justify-around text-center mt-6">
           <div>
-            <p class="font-bold text-xl text-gray-900 dark:text-gray-50">{{ formatCount(156) }}</p>
+            <p class="font-bold text-xl text-gray-900 dark:text-gray-50">
+              {{ proxy.$formatCount(156) }}
+            </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">Posts</p>
           </div>
           <div>
-            <p class="font-bold text-xl text-gray-900 dark:text-gray-50">{{ formatCount(2400) }}</p>
+            <p class="font-bold text-xl text-gray-900 dark:text-gray-50">
+              {{ proxy.$formatCount(2400) }}
+            </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">Followers</p>
           </div>
           <div>
-            <p class="font-bold text-xl text-gray-900 dark:text-gray-50">{{ formatCount(890) }}</p>
+            <p class="font-bold text-xl text-gray-900 dark:text-gray-50">
+              {{ proxy.$formatCount(890) }}
+            </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">Following</p>
           </div>
           <div>
-            <p class="font-bold text-xl text-gray-900 dark:text-gray-50">{{ formatCount(5200) }}</p>
+            <p class="font-bold text-xl text-gray-900 dark:text-gray-50">
+              {{ proxy.$formatCount(5200) }}
+            </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">Likes</p>
           </div>
         </div>
@@ -153,76 +159,37 @@
         </button>
       </div>
 
-      <div class="p-6">
+      <div class="p-2 lg:p-6">
         <div v-if="activeTab === 'posts'">
           <h3 class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-50">Your Posts</h3>
-          <div class="mb-6 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 shadow-sm">
-            <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-50 mb-2">
-              Building scalable React applications with TypeScript
-            </h4>
-            <p class="text-gray-700 dark:text-gray-300 text-sm mb-3">
-              Here's what I've learned after 5 years of React development...
-            </p>
-            <div class="flex flex-wrap gap-2 mb-3">
-              <span
-                class="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-full"
-                >React</span
-              >
-              <span
-                class="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-full"
-                >TypeScript</span
-              >
-              <span
-                class="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-full"
-                >Frontend</span
-              >
-            </div>
-            <div class="flex justify-between items-center text-gray-500 dark:text-gray-400 text-sm">
-              <span>2 days ago</span>
-              <div class="flex items-center space-x-4">
-                <span class="flex items-center space-x-1">
-                  <i class="fas fa-arrow-up"></i><span>234</span>
-                </span>
-                <span class="flex items-center space-x-1">
-                  <i class="far fa-comment-alt"></i><span>45</span>
-                </span>
-              </div>
-            </div>
-          </div>
 
-          <div class="mb-6 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 shadow-sm">
-            <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-50 mb-2">
-              My experience with microservices architecture
-            </h4>
-            <p class="text-gray-700 dark:text-gray-300 text-sm mb-3">
-              Transitioning from monolith to microservices taught me valuable lessons...
-            </p>
-            <div class="flex flex-wrap gap-2 mb-3">
-              <span
-                class="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-full"
-                >Architecture</span
+          <section class="mb-8">
+            <div class="space-y-4">
+              <PostlistCard
+                v-for="(post, index) in latestPosts"
+                :key="post.id"
+                :id="post.id"
+                :title="post.title"
+                :content="post.description"
+                :featured="post.featured_image_url"
+                :tags="post.tags"
+                :date="proxy.$timeAgo(post.created_at)"
+                :upvotes="proxy.$formatCount(post.view_count)"
+                :comments="post.comments"
+                :isOpen="openMenuId === post.id"
+                @toggle-menu="handleToggleMenu"
+                @action="handlePostAction"
+                :post="post"
+                :owner="isOwnProfile"
+              />
+
+              <button
+                class="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-              <span
-                class="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-full"
-                >Backend</span
-              >
-              <span
-                class="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-full"
-                >DevOps</span
-              >
+                Show more
+              </button>
             </div>
-            <div class="flex justify-between items-center text-gray-500 dark:text-gray-400 text-sm">
-              <span>1 week ago</span>
-              <div class="flex items-center space-x-4">
-                <span class="flex items-center space-x-1">
-                  <i class="fas fa-arrow-up"></i><span>189</span>
-                </span>
-                <span class="flex items-center space-x-1">
-                  <i class="far fa-comment-alt"></i><span>32</span>
-                </span>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
 
         <div v-if="activeTab === 'following'">
@@ -252,16 +219,24 @@
     <el-dialog
       v-model="isEditProfileDialogOpen"
       title="Edit Profile"
-     
       :before-close="handleCloseDialog"
-      custom-class="dark:bg-gray-800 dark:text-gray-100 w-full lg:w-[600px]"
+      custom-class="dark:bg-gray-800 dark:text-gray-100 profile-dialog"
+      :show-close="false"
     >
+      <template #header="{ close, titleId, titleClass }">
+        <div class="flexr">
+          <h4 :id="titleId" :class="titleClass">
+            <i class="fas fa-arrow-left" @click="close"></i> Edit Profile
+          </h4>
+        </div>
+      </template>
       <el-form
         ref="editProfileFormRef"
         :model="editFormData"
         :rules="formRules"
         label-width="120px"
         class="el-form-dialog"
+        label-position="top"
       >
         <el-form-item label="First Name" prop="fname">
           <el-input v-model="editFormData.fname" placeholder="First Name"></el-input>
@@ -314,26 +289,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect, reactive, onMounted } from 'vue'
+import { ref, computed, watchEffect, reactive, onMounted, getCurrentInstance } from 'vue'
 import { useUserStore, type UserData } from '@/stores/module/users'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ProfileService } from '@/services/profile.service'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { PostService } from '@/services/post.service'
+import PostlistCard from '@/components/PostlistCard.vue'
 
-const userStore = useUserStore() // Pinia store instance
+const { proxy } = getCurrentInstance()
+
+const userStore = useUserStore()
 const route = useRoute()
-const activeTab = ref('posts') // Default active tab
-const userProfile = ref<UserData>({} as UserData) // Use UserData type
+const router = useRouter()
+const activeTab = ref('posts')
+const userProfile = ref<UserData>({} as UserData)
+const openMenuId = ref<number | null>(null)
 // Dialog and Form State
 const isEditProfileDialogOpen = ref(false)
-const editFormData = ref<UserData>({} as UserData) // Initialize with an empty object, will be populated
-const editProfileFormRef = ref<FormInstance>() // Reference to the ElForm component for validation
+const editFormData = ref<UserData>({} as UserData)
+const editProfileFormRef = ref<FormInstance>()
+const latestPosts = ref([])
 
 // Check if the displayed profile belongs to the logged-in user
 const isOwnProfile = computed(() => {
-  return  userStore.userData?.username === route.params.username;
-});
+  return userStore.userData?.username === route.params.username
+})
 
 // Form Validation Rules
 const formRules = reactive<FormRules>({
@@ -344,49 +326,51 @@ const formRules = reactive<FormRules>({
   description: [{ required: false, message: 'Please provide a description', trigger: 'blur' }],
 })
 
-// Helper function to format large numbers (e.g., 2.4K)
-const formatCount = (num: number): string => {
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
-  }
-  return num.toString()
-}
-
 // Get user profile based on route parameter
 const handleGetProfile = async () => {
   const username: any = route.params.username
   if (!username) {
-    // Handle case where username is not in the route
     ElMessage.error('Username not found in route parameters.')
-    return;
+    return
   }
-  
-  // Check if we are viewing our own profile, if so, use the store data
   if (isOwnProfile.value) {
-    userProfile.value = userStore.userData || {} as UserData;
-    // Pre-populate form data for a smooth edit experience
-    editFormData.value = JSON.parse(JSON.stringify(userStore.userData));
+    userProfile.value = userStore.userData || ({} as UserData)
+    editFormData.value = JSON.parse(JSON.stringify(userStore.userData))
   } else {
-    // Fetch profile from the API for other users
     const response = await ProfileService().getUserProfile(username)
     if (response?.data.statusCode === 200) {
       userProfile.value = response.data.data
     } else {
       ElMessage.error('Failed to load user profile.')
-      // Optionally, redirect to a 404 page
     }
+  }
+}
+
+// Get Post Profile
+const handleGetPostcontent = async () => {
+  const username: any = route.params.username
+  if (!username) {
+    ElMessage.error('Username not found in route parameters.')
+    return
+  }
+  const query = {
+    limit: 10,
+    profile: username,
+  }
+  const response = await PostService().getPostContent(query)
+  if (response?.data.statusCode === 200) {
+    latestPosts.value = response.data.data
+  } else {
+    ElMessage.error('Failed to load user profile.')
   }
 }
 
 // Function to open the edit profile dialog
 const openEditProfileDialog = () => {
-  // Ensure this can only be called for the authenticated user's profile
   if (!isOwnProfile.value) {
-    return;
+    return
   }
-
   if (userStore.userData) {
-    // Ensure edit form data is always a fresh copy of the store data
     editFormData.value = JSON.parse(JSON.stringify(userStore.userData))
     isEditProfileDialogOpen.value = true
   } else {
@@ -394,10 +378,17 @@ const openEditProfileDialog = () => {
   }
 }
 
+const handleToggleMenu = (id: number) => {
+  openMenuId.value = openMenuId.value === id ? null : id
+}
+
+const handlePostAction = ({ type, postId }: { type: string; postId: number }) => {
+  console.log(`Parent received action: ${type} for post ID: ${postId}`)
+  openMenuId.value = null // Close menu after an action is selected
+}
 // Function to handle form submission
 const handleEditProfileSubmit = async () => {
   if (!editProfileFormRef.value) return
-
   try {
     const valid = await editProfileFormRef.value.validate()
     if (valid) {
@@ -408,14 +399,11 @@ const handleEditProfileSubmit = async () => {
         sex: editFormData.value.sex,
         description: editFormData.value.description,
       }
-
       const success = await userStore.updateUserProfile(updatedProfile)
-
       if (success) {
         ElMessage.success('Profile updated successfully!')
         isEditProfileDialogOpen.value = false
-        // Update userProfile reactive ref with the new data from the store
-        userProfile.value = userStore.userData || {} as UserData;
+        userProfile.value = userStore.userData || ({} as UserData)
       } else {
         ElMessage.error('Failed to update profile. Please try again.')
       }
@@ -427,7 +415,6 @@ const handleEditProfileSubmit = async () => {
     ElMessage.error('An unexpected error occurred during update.')
   }
 }
-
 // Function to close and reset the dialog
 const handleCloseDialog = () => {
   ElMessageBox.confirm('Are you sure to close this dialog without saving?', 'Confirm', {
@@ -443,15 +430,32 @@ const handleCloseDialog = () => {
       // User cancelled closing the dialog
     })
 }
-
 // Watch for route changes to fetch new profile data
 watchEffect(() => {
   handleGetProfile()
+})
+onMounted(() => {
+  handleGetPostcontent()
 })
 </script>
 
 <style scoped>
 .el-form-dialog .el-form-item {
   margin-bottom: 20px;
+}
+</style>
+<style scoped>
+.el-form-dialog .el-form-item {
+  margin-bottom: 20px;
+}
+:deep(.el-dialog) {
+  --el-dialog-width: 95vw;
+  margin-top: 80px;
+}
+
+@media (min-width: 640px) {
+  :deep(.el-dialog) {
+    --el-dialog-width: 600px;
+  }
 }
 </style>

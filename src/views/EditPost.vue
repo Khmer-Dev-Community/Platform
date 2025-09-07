@@ -1,11 +1,15 @@
 <template>
   <div class="dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100 py-1 mb-20 mt-4">
-    <div class="mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-      <h1 class="text-base lg:text-2xl font-bold text-gray-900 dark:text-gray-50 mb-6">
-        Create New Post
-      </h1>
+    <div class="mx-auto bg-white dark:bg-gray-800 rounded-lg shadow- p-4 min-h-[600px]">
+      <button
+        @click="$router.back()"
+        class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4 flex items-center space-x-2"
+      >
+        <i class="fas fa-arrow-left"></i>
+        <span> Edit Post </span>
+      </button>
 
-      <el-form ref="DialogFormRef" :model="post">
+      <el-form v-if="OwnerPost" ref="DialogFormRef" :model="post">
         <!-- Title -->
         <div class="mb-2">
           <label
@@ -195,21 +199,38 @@
             Cancel
           </button>
           <button
+            v-if="OwnerPost"
             type="button"
             @click="submitPost"
             class="px-6 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-semibold transition-colors"
           >
-            Post
+            Save
           </button>
         </div>
       </el-form>
+      <div v-else class="flex items-center justify-center h-56">
+        <div class="flex-row">
+          <el-icon style="font-size: 10rem"><Pouring /></el-icon> <br />
+          <h1>Content not found</h1>
+          <br />
+          <button
+            class="bg-gray-200 cursor-pointer rounded-lg px-6 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4 flex items-center space-x-2"
+          >
+            <router-link to="/">
+              <span
+                ><el-icon><DArrowLeft /></el-icon> Back Home <el-icon><DArrowRight /></el-icon>
+              </span>
+            </router-link>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, getCurrentInstance } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, getCurrentInstance, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import axios from 'axios'
 import { PostService } from '@/services/post.service'
@@ -225,6 +246,8 @@ const showFileManager = ref(false)
 const showColorPicker = ref(false)
 const editorInstanceForColor = ref(null)
 const colorType = ref(null)
+const route = useRoute()
+const OwnerPost = ref(false)
 const post = ref({
   title: '',
   description: '',
@@ -239,7 +262,8 @@ const fileList = ref([])
 const dialogImageUrl = ref('')
 const dialogVisible = ref(false)
 const tagInput = ref('')
-const { proxy } = getCurrentInstance()
+const instance = getCurrentInstance()
+const proxy = instance.proxy
 const myVMdEditor = ref(null)
 
 // save last insertImageCallback
@@ -305,7 +329,6 @@ const insertSelectedColor = (color) => {
 
 const openColorPicker = (type, editorInstance) => {
   // editorInstance is VMdEditor wrapper
-  // The actual CodeMirror instance is inside .cm or .codemirror
   editorInstanceForColor.value = editorInstance.cm || editorInstance.codemirror
   colorType.value = type
   showColorPicker.value = true
@@ -386,6 +409,37 @@ const handlePictureCardPreview = (file) => {
   dialogImageUrl.value = file.url
   dialogVisible.value = true
 }
+
+const getFeedPostDetailByID = async () => {
+  try {
+    const id = route.params.id
+    const response = await PostService().getPostContentByID(id)
+
+    if (response?.data.statusCode === 200) {
+      post.value = response.data.data
+      const imageUrl = response.data.data.featured_image_url
+      // Check if an image URL exists before adding it to fileList
+      if (imageUrl) {
+        // Create a file object with the required properties
+        const existingFile = {
+          name: 'post-image', // You can set a default name
+          url: imageUrl,
+        }
+        fileList.value = [existingFile]
+        dialogImageUrl.value = imageUrl
+      } else {
+        fileList.value = []
+        dialogImageUrl.value = ''
+      }
+      console.log(response.data.author_id)
+      if (proxy.$userData.value.id == response.data.data.author_id) {
+        OwnerPost.value = true
+      }
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
 const handleRemove = () => {
   post.value.featured_image_url = null
 }
@@ -407,23 +461,26 @@ const submitPost = async () => {
   DialogFormRef.value.validate(async (valid) => {
     if (!valid) return
     try {
-      const apiMethod = PostService().createPostContent
+      const apiMethod = PostService().updatePostContent
       const response = await apiMethod(post.value)
+      console.log(response.status)
       if (response?.status == 200) {
-        ElMessageBox.confirm('Message,Your post was published', 'Success', {
+        ElMessageBox.confirm('Message,Your post was updated', 'Success', {
           confirmButtonText: 'New Post',
           cancelButtonText: 'View',
           type: 'success',
         })
           .then(() => {
-            post.value = {}
+            router.push({
+              name: 'AddNewPost',
+            })
           })
           .catch(() => {
             router.push({
               name: 'PostDetail',
               params: {
-                username: post.author.username,
-                slug: post.slug,
+                username: response.data.author.username,
+                slug: response.data.slug,
               },
             })
           })
@@ -431,8 +488,7 @@ const submitPost = async () => {
         ElMessage.error(response?.data?.message || 'Unexpected error.')
       }
     } catch (err) {
-      console.error(err)
-      ElMessage.error(proxy?.$t('alerts.failure') || 'Unexpected error')
+      console.info(err)
     }
   })
 }
@@ -442,6 +498,9 @@ const cancelPost = () => {
     router.back()
   }
 }
+onMounted(() => {
+  getFeedPostDetailByID()
+})
 </script>
 <style>
 /* Existing V-MD-Editor dark mode styles and general styles */
@@ -511,5 +570,11 @@ html.dark .el-upload-list__item-actions .el-icon {
 }
 .v-md-editor--fullscreen {
   margin-top: 60px !important;
+}
+.my-custom-message {
+  z-index: 99999 !important;
+}
+:root {
+  --el-message-z-index: 9999;
 }
 </style>

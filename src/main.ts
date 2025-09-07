@@ -1,4 +1,3 @@
-
 import { createApp, computed } from 'vue'
 import { createPinia } from 'pinia'
 // Emoji
@@ -26,6 +25,13 @@ import { useThemeStore } from './stores/theme'
 import VueMarkdownEditor from '@kangc/v-md-editor'
 import '@kangc/v-md-editor/lib/style/base-editor.css'
 import '@kangc/v-md-editor/lib/theme/style/github.css'
+import createCopyCodePlugin from '@kangc/v-md-editor/lib/plugins/copy-code/index'
+import createLineNumbertPlugin from '@kangc/v-md-editor/lib/plugins/line-number/index'
+import '@kangc/v-md-editor/lib/plugins/copy-code/copy-code.css'
+import createEmojiPlugin from '@kangc/v-md-editor/lib/plugins/emoji/index'
+import createTipPlugin from '@kangc/v-md-editor/lib/plugins/tip/index'
+import '@kangc/v-md-editor/lib/plugins/tip/tip.css'
+import '@kangc/v-md-editor/lib/plugins/emoji/emoji.css'
 import vuepressTheme from '@kangc/v-md-editor/lib/theme/vuepress.js'
 import githubTheme from '@kangc/v-md-editor/lib/theme/github.js'
 import enLocale from '@kangc/v-md-editor/lib/lang/en-US'
@@ -51,18 +57,23 @@ VueMarkdownEditor.use(githubTheme, {
 VMdPreview.use(githubTheme, {
   Hljs: hljs,
 })
-
+VueMarkdownEditor.use(createCopyCodePlugin())
+VueMarkdownEditor.use(createLineNumbertPlugin())
+VueMarkdownEditor.use(createEmojiPlugin())
+VueMarkdownEditor.use(createTipPlugin())
 VueMarkdownEditor.lang.use('en-US', enLocale)
 
 async function bootstrap() {
   await setupI18n()
   const app = createApp(App)
-
   const pinia = createPinia()
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
   }
-
+  VMdPreview.use(createCopyCodePlugin())
+  VMdPreview.use(createLineNumbertPlugin())
+  VMdPreview.use(createEmojiPlugin())
+  VMdPreview.use(createTipPlugin())
   app.use(pinia)
   app.use(router)
   app.use(ElementPlus)

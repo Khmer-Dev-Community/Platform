@@ -35,9 +35,10 @@ export const PostService = () => {
     },
     updatePostContent(data: object) {
       return request({
-        url: '/posts/update',
+        url: `/posts/${data?.id}`,
         method: 'put',
         data,
+        withCredentials: true,
       })
     },
     deletePostContent(paramId: number) {

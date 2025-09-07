@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4 border border-gray-100 dark:border-gray-700"
+    class="bg-white dark:bg-gray-800 rounded-lg lg:shadow-1 p-4 mb-4 border border-gray-100 dark:border-gray-700 -mt-6"
   >
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center space-x-2">
@@ -25,9 +25,10 @@
         </div>
       </div>
       <button
+        type="button"
         v-if="!post.isFollowing"
-        class="bg-blue-500 dark:bg-gray-600 px-3 py-1 rounded-full text-sm font-small"
-        style="color: white"
+        class="bg-blue-500 dark:bg-gray-600 px-3 py-1 rounded-full text-xs rounded-full block cursor-pointer hover:bg-blue-600"
+        style="color: white; font-size: 13px"
       >
         Follow +
       </button>
@@ -41,14 +42,15 @@
 
     <div class="flex items-start mb-4 block cursor-pointer" @click="selectPost(post)">
       <div class="flex-1">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-50 mb-1">
+        <h3 class="text-base lg:font-semibold text-gray-900 dark:text-gray-50 mb-1">
           {{ post.title }}
         </h3>
+
         <p
-          v-if="post.description"
-          class="text-gray-700 dark:text-gray-300 text-sm mb-2 leading-relaxed line-clamp-4 mt-5"
+          v-if="post.meta"
+          class="text-gray-700 dark:text-gray-300 text-sm mb-2 leading-relaxed line-clamp-4 mt-5 hidden lg:block"
         >
-          {{ post.description }}
+          {{ post.meta }}
         </p>
         <a
           v-if="post.link"
@@ -61,17 +63,26 @@
           {{ post.link }}
         </a>
       </div>
+
       <div v-if="post.featured_image_url" class="ml-1 lg:ml-20 flex-shrink-0">
         <img
           :src="post.featured_image_url"
           :alt="post.title"
-          class="w-36 h-36 object-cover rounded-md lg:w-56 lg:h-36"
+          class="w-20 h-20 object-cover rounded-md lg:w-56 lg:h-36"
         />
       </div>
     </div>
-
+    <div class="flex -mt-4">
+      <span
+        class="inline-flex items-center justify-center p-2 h-5 bg-gray-100 dark:bg-gray-600 rounded-full mr-2"
+        v-for="(tag, index) in post.tags"
+        :key="index"
+      >
+        <span class="text-gray-400 text-xs">{{ tag }}</span>
+      </span>
+    </div>
     <div
-      class="flex items-center space-x-4 text-gray-600 dark:text-gray-400 text-sm border-t border-gray-200 dark:border-gray-700 p-2"
+      class="flex items-center space-x-4 text-gray-600 dark:text-gray-400 text-sm lg:border-t1 border-gray-200 dark:border-gray-700 p-0 mt-2 -mt-0 lg:mt-1 -pr-6"
     >
       <button
         @click.stop="handleUpvote(post)"
