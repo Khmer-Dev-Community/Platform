@@ -82,47 +82,101 @@
       </span>
     </div>
     <div
-      class="flex items-center space-x-4 text-gray-600 dark:text-gray-400 text-sm lg:border-t1 border-gray-200 dark:border-gray-700 p-0 mt-2 -mt-0 lg:mt-1 -pr-6"
+      class="flex items-center justify-between space-x-2 text-gray-600 dark:text-gray-400 text-sm lg:border-t1 border-gray-200 dark:border-gray-700 p-0 mt-2 -mt-0 lg:mt-1 -pr-6"
     >
-      <button
-        @click.stop="handleUpvote(post)"
-        class="flex items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-      >
-        <i class="fas fa-arrow-up"></i>
-        <span>{{ proxy.$formatCount(post?.view_count) }}</span>
-      </button>
-      <button
-        @click.stop="handleCommentClick(post)"
-        class="flex items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-      >
-        <i class="far fa-comment-alt"></i>
-        <span>{{ proxy.$formatCount(post?.discussion?.length) }}</span>
-      </button>
-      <button
-        @click.stop="handleShare(post)"
-        class="flex items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-      >
-        <i class="fas fa-share"></i>
-        <span>Share</span>
-      </button>
-      <button
-        @click.stop="handleBookmark(post)"
-        class="flex items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-      >
-        <i class="far fa-bookmark"></i> Save
-        <span></span>
-      </button>
+      <div class="flex items-start space-x-2">
+        <span
+          @click.stop="handleUpvote(post)"
+          class="flex text-xs items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
+        >
+          <van-icon name="good-job-o" />
+          <span>{{ proxy.$formatCount(post?.reaction_count) }} {{ post.reaction }}</span>
+        </span>
+        <span
+          @click.stop="handleCommentClick(post)"
+          class="flex text-xs items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
+        >
+          <i class="far fa-comment-alt"></i>
+          <span>{{ proxy.$formatCount(post?.discussion?.length) }}</span>
+        </span>
+        <span
+          @click="SharePost(post)"
+          class="flex text-xs items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
+        >
+          <van-icon name="share-o" />
+          <span>Share</span>
+        </span>
+        <span
+          @click.stop="handleBookmark(post)"
+          class="flex items-center text-xs space-x-1 hover:text-blue-500 bg-gray-200 px-2 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
+        >
+          <el-icon><CollectionTag /></el-icon>Save
+        </span>
+      </div>
+      <div class="flex items-center">
+        <span
+          class="flex items-center text-xs space-x-1 hover:text-blue-500 px-2 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
+        >
+          {{ proxy.$formatCount(post?.view_count) || '0' }} View
+        </span>
+      </div>
     </div>
+
+    <van-share-sheet
+      v-model:show="showShare"
+      :title="shareData.title"
+      :options="options"
+      @select="onSelect"
+      class="w-36 items-center"
+      :description="shareData.description"
+      style="
+        max-width: 600px;
+        justify-content: center;
+        align-items: center;
+        left: 50%;
+
+        transform: translate(-50%);
+      "
+    />
   </div>
 </template>
 
 <script setup>
-import { defineProps, getCurrentInstance } from 'vue'
+import { defineProps, getCurrentInstance, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
+import { showToast } from 'vant'
 const { proxy } = getCurrentInstance()
 const selectedPostStore = useSelectedPostStore()
 const router = useRouter() // Initialize useRouter
+const showShare = ref(false)
+
+const shareData = {
+  title: '',
+  description: '',
+}
+const options = [
+  {
+    name: 'Facebook',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/960px-Facebook_Logo_%282019%29.png',
+  },
+  {
+    name: 'Instagram',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Instagram-Icon.png/1024px-Instagram-Icon.png',
+  },
+  {
+    name: 'X',
+    icon: 'https://wp.logos-download.com/wp-content/uploads/2023/12/X_Logo_app_icon.svg?dl',
+  },
+  {
+    name: 'Telegram',
+    icon: 'https://cdn3.iconfinder.com/data/icons/social-media-chamfered-corner/154/telegram-512.png',
+  },
+  {
+    name: 'Copy Link',
+    icon: ' https://cdn-icons-png.flaticon.com/256/5326/5326787.png',
+  },
+]
 const props = defineProps({
   post: {
     type: Object,
@@ -140,6 +194,7 @@ const props = defineProps({
       comments: 0,
       isFollowing: false,
       view_count: 0,
+      meta: null,
     }),
   },
 })
@@ -153,7 +208,16 @@ const selectPost = (post) => {
     },
   })
 }
-
+const onSelect = (option) => {
+  showToast(option.name)
+  showShare.value = false
+}
+const SharePost = (post) => {
+  console.log(post)
+  shareData.title = post.title
+  shareData.description = post.meta
+  showShare.value = true
+}
 const toggleFollow = (post) => {
   console.log(`Toggling follow for ${post.username}. Current status: ${post.isFollowing}`)
 }
@@ -185,5 +249,8 @@ const handleBookmark = (post) => {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.van-popup--bottom {
+  width: 500px !important;
 }
 </style>
