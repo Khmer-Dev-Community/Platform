@@ -1,6 +1,8 @@
 <template>
   <div class="dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100 py-2 p-1 px-2">
-    <div class="mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-none overflow-hidden p-2 lg:p-6">
+    <div
+      class="mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-none overflow-hidden p-2 lg:p-6"
+    >
       <button
         @click="$router.back()"
         class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4 flex items-center space-x-2"
@@ -241,12 +243,19 @@ const handleAddReply = async ({ parentId, replyContent }) => {
     upvotes: 0,
     parent_comment_id: parentId,
     replies: [],
+    avatar_url: proxy.$userData.value.avatar_url,
   }
+  newReply.author = proxy.$userData.value
+
   const response = await CommentService().createPostComment(post.value.id, newReply)
+  const newReplyToSend = response.data.data
+  newReplyToSend.auth
   const findAndAddReply = (comments, targetId, reply) => {
+    newReply.sort((a, b) => a - b)
     for (const comment of comments) {
       if (comment.id === targetId) {
         comment.replies.push(newReply)
+        console.log(newReply)
         return true
       }
       if (comment.replies && comment.replies.length > 0) {

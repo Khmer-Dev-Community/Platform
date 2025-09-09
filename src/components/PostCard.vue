@@ -1,12 +1,13 @@
 <template>
   <div
     class="bg-white dark:bg-gray-800 rounded-lg lg:shadow-1 p-4 mb-4 border border-gray-100 dark:border-gray-700 -mt-6"
+    v-if="post"
   >
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center space-x-2">
         <img
           :src="post.author?.avatar_url"
-          :alt="post.auth?.first_name + ' Avatar'"
+          :alt="post.author?.first_name + ' Avatar'"
           class="w-8 h-8 rounded-full object-cover"
         />
         <div class="text-sm">
@@ -81,74 +82,26 @@
         <span class="text-gray-400 text-xs">{{ tag }}</span>
       </span>
     </div>
-    <div
-      class="flex items-center justify-between space-x-2 text-gray-600 dark:text-gray-400 text-sm lg:border-t1 border-gray-200 dark:border-gray-700 p-0 mt-2 -mt-0 lg:mt-1 -pr-6"
-    >
-      <div class="flex items-start space-x-2">
-        <span
-          @click.stop="handleUpvote(post)"
-          class="flex text-xs items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-        >
-          <van-icon name="good-job-o" />
-          <span>{{ proxy.$formatCount(post?.reaction_count) }} {{ post.reaction }}</span>
-        </span>
-        <span
-          @click.stop="handleCommentClick(post)"
-          class="flex text-xs items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-        >
-          <i class="far fa-comment-alt"></i>
-          <span>{{ proxy.$formatCount(post?.discussion?.length) }}</span>
-        </span>
-        <span
-          @click="SharePost(post)"
-          class="flex text-xs items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-        >
-          <van-icon name="share-o" />
-          <span>Share</span>
-        </span>
-        <span
-          @click.stop="handleBookmark(post)"
-          class="flex items-center text-xs space-x-1 hover:text-blue-500 bg-gray-200 px-2 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-        >
-          <el-icon><CollectionTag /></el-icon>Save
-        </span>
-      </div>
-      <div class="flex items-center">
-        <span
-          class="flex items-center text-xs space-x-1 hover:text-blue-500 px-2 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
-        >
-          {{ proxy.$formatCount(post?.view_count) || '0' }} View
-        </span>
-      </div>
-    </div>
-
-    <van-share-sheet
-      v-model:show="showShare"
-      :title="shareData.title"
-      :options="options"
-      @select="onSelect"
-      class="w-36 items-center"
-      :description="shareData.description"
-      style="
-        max-width: 600px;
-        justify-content: center;
-        align-items: center;
-        left: 50%;
-
-        transform: translate(-50%);
-      "
+    <PostActions
+      :post="post"
+      :has-user-reacted="hasUserReacted"
+      @upvote="handleUpvote"
+      @comment="handleCommentClick"
+      @bookmark="handleBookmark"
     />
   </div>
 </template>
 
 <script setup>
-import { defineProps, getCurrentInstance, ref } from 'vue'
+import { defineProps, getCurrentInstance, ref, computed } from 'vue'
+import PostActions from '@/components/PostAction.vue'
 import { useRouter } from 'vue-router'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
 import { showToast } from 'vant'
+
 const { proxy } = getCurrentInstance()
 const selectedPostStore = useSelectedPostStore()
-const router = useRouter() // Initialize useRouter
+const router = useRouter()
 const showShare = ref(false)
 
 const shareData = {
@@ -174,7 +127,7 @@ const options = [
   },
   {
     name: 'Copy Link',
-    icon: ' https://cdn-icons-png.flaticon.com/256/5326/5326787.png',
+    icon: 'https://cdn-icons-png.flaticon.com/256/5326/5326787.png',
   },
 ]
 const props = defineProps({
@@ -194,16 +147,28 @@ const props = defineProps({
       comments: 0,
       isFollowing: false,
       view_count: 0,
+      reaction: [],
       meta: null,
+      reaction_count: 0,
     }),
   },
 })
+
+// === NEW: Computed property to check if the current user has reacted ===
+const hasUserReacted = computed(() => {
+  // Use optional chaining to safely access nested properties
+  if (!props.post?.reaction) {
+    return false
+  }
+  return props.post.reaction.some((react) => react.user_id === proxy.$userData.value.id)
+})
+
 const selectPost = (post) => {
   selectedPostStore.setSelectedPost(post)
   router.push({
     name: 'PostDetail',
     params: {
-      username: post.author.username, // Assuming post.author.username exists
+      username: post.author.username,
       slug: post.slug,
     },
   })
@@ -218,27 +183,17 @@ const SharePost = (post) => {
   shareData.description = post.meta
   showShare.value = true
 }
-const toggleFollow = (post) => {
-  console.log(`Toggling follow for ${post.username}. Current status: ${post.isFollowing}`)
-}
 
 const handleUpvote = (post) => {
   console.log(`Upvoting post: ${post.title}`)
-  // Emit event or dispatch action to increment upvotes
 }
 
 const handleCommentClick = (post) => {
   console.log(`Viewing comments for post: ${post.title}`)
 }
 
-const handleShare = (post) => {
-  console.log(`Sharing post: ${post.title}`)
-  // Implement share functionality (e.g., Web Share API)
-}
-
 const handleBookmark = (post) => {
   console.log(`Bookmarking post: ${post.title}`)
-  // Emit event or dispatch action to toggle bookmark status
 }
 </script>
 

@@ -3,8 +3,8 @@
     class="flex items-start space-x-3 bg-gray-10 dark:bg-gray-10 p-4 shadow-none border-b border-gray-50 dark:border-gray-700 -mt-5"
   >
     <img
-      :src="comment?.author.avatar_url"
-      :alt="comment?.author.username + ' Avatar'"
+      :src="comment?.author?.avatar_url"
+      :alt="comment?.author?.username + ' Avatar'"
       class="w-8 h-8 rounded-full object-cover"
     />
     <div class="flex-1">
