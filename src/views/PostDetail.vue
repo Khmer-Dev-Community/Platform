@@ -193,14 +193,15 @@ const addComment = async () => {
       author_id: proxy.$userData.value.id,
       content: newCommentText.value.trim(),
       upvotes: 0,
+      author: proxy.$userData.value,
     }
     const response = await CommentService().createPostComment(post.value.id, newComment)
-    post.value.discussion.unshift(newComment)
+    post.value.discussion.push(response.data.data)
+    //post.value.discussion.unshift(newComment)
+    post.value.discussion.sort((a, b) => b.id - a.id)
+    console.log(post.value.discussion)
     newCommentText.value = ''
     post.value.comments++
-    if (response?.data.statusCode === 200) {
-      post.value = response.data.data
-    }
   } catch (err) {
     console.error(err)
   }
@@ -249,13 +250,13 @@ const handleAddReply = async ({ parentId, replyContent }) => {
 
   const response = await CommentService().createPostComment(post.value.id, newReply)
   const newReplyToSend = response.data.data
-  newReplyToSend.auth
+  //newReplyToSend.auth
   const findAndAddReply = (comments, targetId, reply) => {
-    newReply.sort((a, b) => a - b)
     for (const comment of comments) {
       if (comment.id === targetId) {
-        comment.replies.push(newReply)
-        console.log(newReply)
+        comment.replies.push(newReplyToSend)
+        comment.replies.sort((a, b) => b.id - a.id)
+        console.log(newReplyToSend)
         return true
       }
       if (comment.replies && comment.replies.length > 0) {

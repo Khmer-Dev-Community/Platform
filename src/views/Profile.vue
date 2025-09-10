@@ -148,14 +148,14 @@
           <i class="fas fa-heart mr-2"></i> Liked
         </button>
         <button
-          @click="activeTab = 'about'"
+          @click="((activeTab = 'save'), handleGetsavePost())"
           :class="{
             'border-b-2 border-purple-600 text-purple-600 dark:text-purple-400 font-semibold':
-              activeTab === 'about',
+              activeTab === 'save',
           }"
           class="flex-1 py-3 text-center text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
         >
-          <i class="fas fa-info-circle mr-2"></i> About
+          <el-icon><CollectionTag /></el-icon> Save
         </button>
       </div>
 
@@ -181,6 +181,7 @@
                 @action="handlePostAction"
                 :post="post"
                 :owner="isOwnProfile"
+                :isSave="false"
               />
 
               <button
@@ -206,12 +207,32 @@
           <p class="text-gray-600 dark:text-gray-400">Content you have liked would appear here.</p>
         </div>
 
-        <div v-if="activeTab === 'about'">
-          <h3 class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-50">About Me</h3>
-          <p class="text-gray-600 dark:text-gray-400">
-            This section would contain more detailed information about the user, their interests,
-            etc.
-          </p>
+        <div v-if="activeTab === 'save'">
+          <h3 class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-50">Post Saved</h3>
+          <PostlistCard
+            v-for="(i, index) in savePosts"
+            :key="i.post.id"
+            :id="i.post.id"
+            :title="i.post.title"
+            :content="i.post.description"
+            :featured="i.post.featured_image_url"
+            :tags="i.post.tags"
+            :date="proxy.$timeAgo(i.post.created_at)"
+            :upvotes="proxy.$formatCount(i.post.view_count)"
+            :comments="i.post.comments"
+            :isOpen="openMenuId === i.post.id"
+            @toggle-menu="handleToggleMenu"
+            @action="handlePostAction"
+            :post="i.post"
+            :owner="isOwnProfile"
+            :isSaved="true"
+          />
+
+          <button
+            class="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            Show more
+          </button>
         </div>
       </div>
     </div>
@@ -297,6 +318,7 @@ import { ProfileService } from '@/services/profile.service'
 import { useRoute, useRouter } from 'vue-router'
 import { PostService } from '@/services/post.service'
 import PostlistCard from '@/components/PostlistCard.vue'
+import { SavePostService } from '@/services/saved.post.service'
 
 const { proxy } = getCurrentInstance()
 
@@ -311,6 +333,7 @@ const isEditProfileDialogOpen = ref(false)
 const editFormData = ref<UserData>({} as UserData)
 const editProfileFormRef = ref<FormInstance>()
 const latestPosts = ref([])
+const savePosts = ref([])
 
 // Check if the displayed profile belongs to the logged-in user
 const isOwnProfile = computed(() => {
@@ -381,7 +404,19 @@ const openEditProfileDialog = () => {
 const handleToggleMenu = (id: number) => {
   openMenuId.value = openMenuId.value === id ? null : id
 }
-
+const handleGetsavePost = () => {
+  const username: any = route.params.username
+  SavePostService()
+    .getSavePost(username, { limit: 10 })
+    .then((response) => {
+      console.log(response.data)
+      if (response?.status === 200) {
+        savePosts.value = response.data
+      } else {
+        ElMessage.error('Failed to load user profile.')
+      }
+    })
+}
 const handlePostAction = ({ type, postId }: { type: string; postId: number }) => {
   console.log(`Parent received action: ${type} for post ID: ${postId}`)
   openMenuId.value = null // Close menu after an action is selected

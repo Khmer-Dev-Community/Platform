@@ -8,14 +8,14 @@
         class="flex text-xs items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
       >
         <van-icon name="good-job-o" :class="{ 'text-blue-500': localHasUserReacted }" />
-        <span>{{ formatCount(localReactionCount) }}</span>
+        <span>{{ proxy?.$formatCount(localReactionCount) }}</span>
       </span>
       <span
-        @click.stop="handleCommentClick"
+        @click="selectPost(post)"
         class="flex text-xs items-center space-x-1 hover:text-blue-500 bg-gray-200 px-3 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
       >
         <i class="far fa-comment-alt"></i>
-        <span>{{ formatCount(post?.comment_count) }}</span>
+        <span>{{ proxy?.$formatCount(post?.comment_count) }}</span>
       </span>
       <span
         @click="handleShare"
@@ -28,14 +28,19 @@
         @click.stop="handleBookmark"
         class="flex items-center text-xs space-x-1 hover:text-blue-500 bg-gray-200 px-2 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
       >
-        <el-icon><CollectionTag /></el-icon>Save
+        <span v-if="!saved"
+          ><el-icon><CollectionTag /></el-icon>Save</span
+        >
+        <span v-else class="text-blue-500"
+          ><el-icon><DocumentRemove class="text-blue-500" /></el-icon> Remove</span
+        >
       </span>
     </div>
     <div class="flex items-center">
       <span
         class="flex items-center text-xs space-x-1 hover:text-blue-500 px-2 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
       >
-        {{ formatCount(post?.view_count) || '0' }} View
+        {{ proxy?.$formatCount(post?.view_count) || '0' }} View
       </span>
     </div>
 
@@ -58,14 +63,24 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref, computed, reactive, watch } from 'vue'
+import { defineProps, defineEmits, ref, computed, reactive, watch, getCurrentInstance } from 'vue'
 import { showToast } from 'vant'
 import { ReactionService } from '@/services/reaction.service'
+import { useSelectedPostStore } from '@/stores/emit/post.emit'
+import { useRouter } from 'vue-router'
+import { SavePostService } from '@/services/saved.post.service'
 
+const { proxy } = getCurrentInstance()
+const selectedPostStore = useSelectedPostStore()
+const router = useRouter()
 const props = defineProps({
   post: {
     type: Object,
     required: true,
+  },
+  saved: {
+    type: Boolean,
+    default: false,
   },
   hasUserReacted: {
     type: Boolean,
@@ -120,7 +135,16 @@ watch(
     localHasUserReacted.value = newValue
   },
 )
-
+const selectPost = (post) => {
+  selectedPostStore.setSelectedPost(post)
+  router.push({
+    name: 'PostDetail',
+    params: {
+      username: post.author.username,
+      slug: post.slug,
+    },
+  })
+}
 const handleUpvote = async () => {
   const data = {
     post_id: props.post.id,
@@ -155,20 +179,17 @@ const handleUpvote = async () => {
 const handleCommentClick = () => {
   emit('comment', props.post)
 }
-const handleBookmark = () => {
-  emit('bookmark', props.post)
+const handleBookmark = (post) => {
+  const data = {
+    post_id: props.post.id,
+    username: proxy?.$userData.value.username,
+  }
+  SavePostService().createSavePost(props.post.id, data)
 }
 const handleShare = () => {
   shareData.value.title = props.post.title
   shareData.value.description = props.post.meta
   showShare.value = true
-}
-
-const formatCount = (count) => {
-  if (count === undefined || count === null) {
-    return '0'
-  }
-  return count
 }
 
 const onSelect = (option) => {

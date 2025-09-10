@@ -32,6 +32,7 @@
             </button>
             <button
               @click="action('save')"
+              v-if="!isSaved"
               class="w-full text-left px-4 py-2 cursor-pointer hover:bg-gray-100 text-xs text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
               role="menuitem"
             >
@@ -73,17 +74,14 @@
         {{ tag }}
       </span>
     </div>
-    <div class="flex justify-between items-center text-gray-500 dark:text-gray-400 text-sm">
-      <span>{{ date }}</span>
-      <div class="flex items-center space-x-4">
-        <span class="flex items-center space-x-1">
-          <i class="fas fa-arrow-up"></i><span>{{ upvotes }}</span>
-        </span>
-        <span class="flex items-center space-x-1">
-          <i class="far fa-comment-alt"></i><span>{{ comments }}</span>
-        </span>
-      </div>
-    </div>
+    <PostActions
+      :post="post"
+      :saved="isSaved"
+      :has-user-reacted="hasUserReacted"
+      @upvote="handleUpvote"
+      @comment="handleCommentClick"
+      @bookmark="handleBookmark"
+    />
   </div>
 </template>
 
@@ -91,6 +89,7 @@
 import { defineProps, defineEmits, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
+import PostActions from '@/components/PostAction.vue'
 const selectedPostStore = useSelectedPostStore()
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -136,6 +135,10 @@ const props = defineProps({
     required: true,
   },
   owner: {
+    type: Boolean,
+    default: false,
+  },
+  isSaved: {
     type: Boolean,
     default: false,
   },
