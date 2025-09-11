@@ -6,17 +6,20 @@
     "cypress.config.*",
     "nightwatch.conf.*",
     "playwright.config.*",
-    "eslint.config.*"
+    "eslint.config.*",
+   "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.vue"
   ],
   "compilerOptions": {
     "noEmit": true,
     "baseUrl": ".",
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
-"paths": {
-      "@/*": ["src/*"]
-    },
+    "paths": {
+          "@/*": ["src/*"]
+        },
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": ["node"]
+  "types": ["node", "vite/client", "vue"]
   }
 }

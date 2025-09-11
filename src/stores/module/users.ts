@@ -4,7 +4,7 @@ import { Storage } from '@capacitor/storage'
 import request from '@/utils/request'
 import type { AxiosResponse } from 'axios'
 import type { BackendResponse } from '@/utils/request'
-import type { UserData } from './users.types'
+import type { UserData } from '@/types/users.types'
 
 // Define the API response types for better type safety
 interface LoginResponse {
@@ -48,6 +48,7 @@ export const useUserStore = defineStore('user', {
 
     async loadUserFromCache(): Promise<void> {
       const { value: userDataString } = await Storage.get({ key: 'userData' })
+      console.log(userDataString)
       if (userDataString) {
         try {
           const cachedUserData: UserData = JSON.parse(userDataString)
@@ -64,6 +65,10 @@ export const useUserStore = defineStore('user', {
       this.loadingUser = true
       // Load from cache for immediate user feedback
       await this.loadUserFromCache()
+      const { value: userDataString } = await Storage.get({ key: 'userData' })
+      if (!userDataString) {
+        return
+      }
 
       try {
         // 🟢 FIX: The `BackendResponse` generic should match the type of the `user` or `data` field
@@ -91,12 +96,12 @@ export const useUserStore = defineStore('user', {
     },
 
     async clearUser(): Promise<void> {
-      this.isLogged = false
-      this.userData = null
       try {
-        await request.post('/api/auth/logout', null, { withCredentials: true })
+        await request.post('/auth/logout', null, { withCredentials: true })
         await Storage.remove({ key: 'islogged' })
         await Storage.remove({ key: 'userData' })
+        this.isLogged = false
+        this.userData = null
         console.log('Backend logout successful, and frontend user data cleared.')
       } catch (error) {
         console.error('Error during backend logout API call:', error)

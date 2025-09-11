@@ -12,6 +12,12 @@ const router = createRouter({
       component: () => import('../views/Home.vue'),
       meta: {
         fullPage: false,
+        title: 'KDC Community | Official',
+        metaTags: [
+          { name: 'description', content: 'Welcome  KDC community!' },
+          { property: 'og:title', content: 'KDC Community  ' },
+          { property: 'og:description', content: 'Join discussions and connect with people.' },
+        ],
       },
     },
     {
@@ -48,6 +54,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/@:username/tap/:active?',
+      name: 'profile-active',
+      component: () => import('../views/Profile.vue'),
+      meta: {
+        fullPage: false,
+      },
+    },
+    {
       path: '/@:username',
       name: 'profile',
       component: () => import('../views/Profile.vue'),
@@ -55,6 +69,7 @@ const router = createRouter({
         fullPage: false,
       },
     },
+
     {
       path: '/member',
       name: 'member',
@@ -107,7 +122,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/auth/callback',
+      path: '/redirect',
       name: 'AuthCallback',
       component: () => import('../views/AuthCallbackPage.vue'),
       meta: {
@@ -166,11 +181,14 @@ const router = createRouter({
       },
     },
   ],
+  scrollBehavior(to, from, savedPosition) {
+    return { top: 0, left: 0 }
+  },
 })
 
 // --- Navigation Guard ---
 router.beforeEach(async (to, from, next) => {
-  const userStore = useUserStore() // Get the user store instance
+  const userStore = useUserStore()
   if (!userStore.userData && !userStore.loadingUser) {
     //await userStore.loadUserAndToken()
   }

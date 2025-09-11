@@ -27,6 +27,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/module/users'
+import { AuthService } from '@/services/auth.service'
 
 const router = useRouter()
 const route = useRoute()
@@ -46,7 +47,16 @@ onMounted(async () => {
 
   console.log('AuthCallbackPage: Attempting to load user data...')
   try {
-    await userStore.loadUserAndToken()
+    AuthService()
+      .AuthProfile()
+      .then(async (response) => {
+        console.log(response.data)
+        if ((response.data.statusCode = 200)) {
+          userStore.setUser(response.data.data)
+          userStore.isLogged = true
+          router.push('/')
+        }
+      })
     if (userStore.isLogged) {
       console.log('AuthCallbackPage: User successfully logged in. Redirecting...')
       const redirectPath = (route.query.redirect as string) || '/'
@@ -55,7 +65,7 @@ onMounted(async () => {
       console.log(
         'AuthCallbackPage: User not logged in after loadUserAndToken. Redirecting to login.',
       )
-      // router.push('/login')
+      // cookies.remove('kdc.secure.token', { path: '/' })
     }
   } catch (e) {
     console.error('AuthCallbackPage: Error during user data loading:', e)

@@ -16,6 +16,7 @@
     "@capacitor/core": "7.4.2",
     "@capacitor/storage": "1.2.5",
     "@kangc/v-md-editor": "2.3.18",
+    "@vueuse/head": "2.0.0",
     "axios": "1.10.0",
     "element-plus": "2.10.4",
     "highlight.js": "11.11.1",
@@ -26,6 +27,7 @@
     "vant": "4.9.21",
     "vue": "^3.4.0",
     "vue-i18n": "12.0.0-alpha.3",
+    "vue-meta": "2.4.0",
     "vue-router": "^4.5.1",
     "vue3-emoji-picker": "1.1.8"
   },

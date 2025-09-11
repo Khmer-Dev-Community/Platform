@@ -31,14 +31,6 @@
               <i class="fas fa-trash-alt mr-2"></i> Delete
             </button>
             <button
-              @click="action('save')"
-              v-if="!isSaved"
-              class="w-full text-left px-4 py-2 cursor-pointer hover:bg-gray-100 text-xs text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-              role="menuitem"
-            >
-              <i class="fas fa-bookmark mr-2"></i> Save
-            </button>
-            <button
               @click="action('report')"
               class="w-full text-left px-4 py-2 cursor-pointer hover:bg-gray-100 text-xs text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
               role="menuitem"
@@ -51,6 +43,30 @@
     </div>
     <div class="flex space-x-4 items-start mb-4 block cursor-pointer" @click="selectPost(post)">
       <div class="flex-1">
+        <div class="flex items-center space-x-2">
+          <img
+            :src="author_profile"
+            :alt="author + ' Avatar'"
+            class="w-8 h-8 rounded-full object-cover"
+          />
+          <div class="text-sm dark:bg-gray-800">
+            <router-link :to="`/@${post.author?.username}`" class="cursor-pointer bg-transparent">
+              <span class="font-semibold text-gray-800 dark:text-gray-100 dark:bg-gray-800">{{
+                post.author?.first_name
+              }}</span></router-link
+            ><br />
+            <router-link
+              :to="`/@${post.author?.username}`"
+              class="cursor-pointer bg-transparent dark:bg-gray-800"
+            >
+              <span class="dark:bg-gray-800 dark:text-gray-100"> @{{ post.author?.username }}</span>
+            </router-link>
+
+            <span class="text-gray-500 dark:text-gray-400">
+              • {{ proxy.$timeAgo(post.created_at) }}</span
+            >
+          </div>
+        </div>
         <h2 class="text-sm lg:text-lg font-semibold text-gray-900 dark:text-gray-50 mb-2">
           {{ title }}
         </h2>
@@ -78,9 +94,7 @@
       :post="post"
       :saved="isSaved"
       :has-user-reacted="hasUserReacted"
-      @upvote="handleUpvote"
-      @comment="handleCommentClick"
-      @bookmark="handleBookmark"
+      @unbookmark-success="handleUnbookmarkSuccess"
     />
   </div>
 </template>
@@ -90,10 +104,21 @@ import { defineProps, defineEmits, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
 import PostActions from '@/components/PostAction.vue'
+import { showToast } from 'vant'
+import { SavePostService } from '@/services/saved.post.service'
+
 const selectedPostStore = useSelectedPostStore()
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const props = defineProps({
+  author: {
+    type: String,
+    required: true,
+  },
+  author_profile: {
+    type: String,
+    required: true,
+  },
   isOpen: {
     type: Boolean,
     default: false,
@@ -142,14 +167,26 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  hasUserReacted: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emits = defineEmits(['toggle-menu', 'action'])
-
-const action = (type) => {
-  // Emit action and postId to the parent
-  emits('action', { type, id: props.id })
+// The emitted events
+const emits = defineEmits(['toggle-menu', 'action', 'remove-post'])
+const handleUnbookmarkSuccess = (event) => {
+  emits('remove-post', event)
 }
+
+const action = async (type) => {
+  if (type === 'delete') {
+    emits('action', { type, id: props.id })
+  } else {
+    emits('action', { type, id: props.id })
+  }
+}
+
 const selectPost = (post) => {
   selectedPostStore.setSelectedPost(post)
   router.push({
@@ -160,6 +197,7 @@ const selectPost = (post) => {
     },
   })
 }
+
 const EditPost = (post) => {
   router.push({
     name: 'EditPost',

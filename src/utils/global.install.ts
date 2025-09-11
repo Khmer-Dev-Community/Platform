@@ -1,41 +1,43 @@
 // src/plugins/global.install.ts
-
 import { useThemeStore } from '@/stores/theme'
-import { useUserStore } from '@/stores/module/users' // 👈 Correct import
-import { type App, type Plugin, type ComputedRef, computed } from 'vue'
+import { useUserStore } from '@/stores/module/users'
+import { type App, reactive, computed } from 'vue'
 import { timeAgo, formatCount } from './formatters'
-import type { UserData } from '@/stores/module/users.types'
+import type { UserData } from '@/types/users.types'
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     $timeAgo: (date: string) => string
     $formatCount: (data: number) => string
-    $isLoggedIn: ComputedRef<boolean>
-    $userData: ComputedRef<UserData | null>
-    $appTheme: ComputedRef<boolean>
+    $isLoggedIn: boolean
+    $userData: UserData | null
+    $appTheme: boolean
   }
 }
 
-const GlobalPlugin: Plugin = {
+const GlobalPlugin = {
   install(app: App) {
-    app.config.globalProperties.$timeAgo = timeAgo
-    app.config.globalProperties.$formatCount = formatCount
-    Object.defineProperty(app.config.globalProperties, '$userData', {
-      enumerable: true,
-      configurable: true,
-      get: () => computed(() => useUserStore().userData),
-    })
-    Object.defineProperty(app.config.globalProperties, '$isLoggedIn', {
-      enumerable: true,
-      configurable: true,
-      get: () => computed(() => useUserStore().isLogged),
+    const userStore = useUserStore()
+    const themeStore = useThemeStore()
+
+    // Use a reactive proxy to automatically track changes
+    const globalState = reactive({
+      get $isLoggedIn() {
+        return userStore.isLogged
+      },
+      get $userData() {
+        return userStore.userData
+      },
+      get $appTheme() {
+        return themeStore.isDark
+      },
     })
 
-    Object.defineProperty(app.config.globalProperties, '$appTheme', {
-      enumerable: true,
-      configurable: true,
-      get: () => computed(() => useThemeStore().isDark),
-    })
+    app.config.globalProperties.$timeAgo = timeAgo
+    app.config.globalProperties.$formatCount = formatCount
+
+    // Assign reactive getters directly
+    Object.assign(app.config.globalProperties, globalState)
   },
 }
 

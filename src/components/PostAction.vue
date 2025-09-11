@@ -25,13 +25,12 @@
         <span>Share</span>
       </span>
       <span
-        @click.stop="handleBookmark"
         class="flex items-center text-xs space-x-1 hover:text-blue-500 bg-gray-200 px-2 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
       >
-        <span v-if="!saved"
+        <span v-if="!saved" @click.stop="handleToggleBookmark"
           ><el-icon><CollectionTag /></el-icon>Save</span
         >
-        <span v-else class="text-blue-500"
+        <span v-else class="text-blue-500" @click.stop="handleToggleBookmark"
           ><el-icon><DocumentRemove class="text-blue-500" /></el-icon> Remove</span
         >
       </span>
@@ -45,7 +44,8 @@
     </div>
 
     <van-share-sheet
-      v-model:show="showShare"
+      :show="showShare"
+      @update:show="showShare = $event"
       :title="shareData.title"
       :options="options"
       @select="onSelect"
@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref, computed, reactive, watch, getCurrentInstance } from 'vue'
+import { defineProps, defineEmits, ref, watch, getCurrentInstance } from 'vue'
 import { showToast } from 'vant'
 import { ReactionService } from '@/services/reaction.service'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
@@ -73,6 +73,7 @@ import { SavePostService } from '@/services/saved.post.service'
 const { proxy } = getCurrentInstance()
 const selectedPostStore = useSelectedPostStore()
 const router = useRouter()
+
 const props = defineProps({
   post: {
     type: Object,
@@ -88,7 +89,14 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['upvote', 'comment', 'bookmark', 'update-reaction-status'])
+// The emitted events
+const emit = defineEmits([
+  'upvote',
+  'comment',
+  'bookmark',
+  'update-reaction-status',
+  'unbookmark-success',
+])
 
 const showShare = ref(false)
 const shareData = ref({
@@ -97,26 +105,11 @@ const shareData = ref({
 })
 
 const options = [
-  {
-    name: 'Facebook',
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/960px-Facebook_Logo_%282019%29.png',
-  },
-  {
-    name: 'Instagram',
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Instagram-Icon.png/1024px-Instagram-Icon.png',
-  },
-  {
-    name: 'X',
-    icon: 'https://wp.logos-download.com/wp-content/uploads/2023/12/X_Logo_app_icon.svg?dl',
-  },
-  {
-    name: 'Telegram',
-    icon: 'https://cdn3.iconfinder.com/data/icons/social-media-chamfered-corner/154/telegram-512.png',
-  },
-  {
-    name: 'Copy Link',
-    icon: 'https://cdn-icons-png.flaticon.com/256/5326/5326787.png',
-  },
+  { name: 'Facebook', icon: '...' },
+  { name: 'Instagram', icon: '...' },
+  { name: 'X', icon: '...' },
+  { name: 'Telegram', icon: '...' },
+  { name: 'Copy Link', icon: '...' },
 ]
 
 const localReactionCount = ref(props.post.reaction_count)
@@ -128,13 +121,13 @@ watch(
     localReactionCount.value = newCount
   },
 )
-
 watch(
   () => props.hasUserReacted,
   (newValue) => {
     localHasUserReacted.value = newValue
   },
 )
+
 const selectPost = (post) => {
   selectedPostStore.setSelectedPost(post)
   router.push({
@@ -145,27 +138,21 @@ const selectPost = (post) => {
     },
   })
 }
+
 const handleUpvote = async () => {
   const data = {
     post_id: props.post.id,
     reaction_type: 'like',
   }
   try {
-    // Check local state to determine the action
     if (localHasUserReacted.value) {
-      // The user is un-liking the post
       localReactionCount.value--
       localHasUserReacted.value = false
     } else {
-      // The user is liking the post
       localReactionCount.value++
       localHasUserReacted.value = true
     }
-
-    // Call the API
     await ReactionService().createPostReaction(props.post.id, data)
-
-    // Emit the event to the parent to update the source of truth
     emit('update-reaction-status', {
       postID: props.post.id,
       hasUserReacted: localHasUserReacted.value,
@@ -176,16 +163,26 @@ const handleUpvote = async () => {
   }
 }
 
-const handleCommentClick = () => {
-  emit('comment', props.post)
-}
-const handleBookmark = (post) => {
-  const data = {
-    post_id: props.post.id,
-    username: proxy?.$userData.value.username,
+// Single function to handle both saving and unsaving
+const handleToggleBookmark = async () => {
+  try {
+    const data = {
+      post_id: props.post.id,
+      username: proxy?.$userData.username,
+    }
+    await SavePostService().createSavePost(props.post.id, data)
+    if (props.saved) {
+      showToast('Post removed!')
+      emit('unbookmark-success', { postId: props.post.id })
+    } else {
+      showToast('Post saved!')
+    }
+  } catch (error) {
+    console.error('Failed to toggle bookmark:', error)
+    showToast('Failed to toggle bookmark.')
   }
-  SavePostService().createSavePost(props.post.id, data)
 }
+
 const handleShare = () => {
   shareData.value.title = props.post.title
   shareData.value.description = props.post.meta

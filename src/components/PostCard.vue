@@ -160,7 +160,7 @@ const hasUserReacted = computed(() => {
   if (!props.post?.reaction) {
     return false
   }
-  return props.post.reaction.some((react) => react.user_id === proxy.$userData.value.id)
+  return props.post.reaction.some((react) => react.user_id === proxy.$userData.id)
 })
 
 const selectPost = (post) => {

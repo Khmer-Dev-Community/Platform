@@ -6,7 +6,9 @@
     <SidebarNavItem v-for="item in HomeNavItems" :key="item.text" :item="item" />
     <el-title class="text-base font-semibold" tag="b"> Welcome</el-title>
     <SidebarNavItem v-for="item in WelcomNavItems" :key="item.text" :item="item" class="mt-2" />
-    <el-title class="text-base font-semibold" tag="b"> Community</el-title>
+    <el-title v-if="userStore.isLogged" class="text-base font-semibold" tag="b">
+      Community</el-title
+    >
     <SidebarNavItem v-for="item in communityNavItems" :key="item.text" :item="item" />
     <el-title class="text-base font-semibold" tag="b"> Product Updates</el-title>
     <SidebarNavItem v-for="item in releaseNavItems" :key="item.text" :item="item" />
@@ -18,7 +20,9 @@
 <script setup>
 import { defineProps, computed, getCurrentInstance } from 'vue'
 import SidebarNavItem from './SidebarNavItem.vue'
-
+import { useUserStore } from '@/stores/module/users'
+const userStore = useUserStore()
+const $isLoggedIn = computed(() => userStore.isLogged)
 // Avoid using getCurrentInstance and proxy in production if possible.
 // A better practice is to pass a user data prop directly.
 const instance = getCurrentInstance()
@@ -34,7 +38,7 @@ const props = defineProps({
 
 const filteredNavItems = computed(() => {
   // Check if $userData exists and has an ID
-  if (!proxy.$userData.value || !proxy.$userData.value.id) {
+  if (!proxy.$userData || !proxy.$userData.id) {
     return props.navItems.filter((item) => item.route !== '@me')
   }
   return props.navItems

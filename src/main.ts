@@ -15,6 +15,8 @@ import { i18n, setupI18n } from './locales'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 
+// meta seo
+import { createHead } from '@vueuse/head'
 import App from './App.vue'
 import router from './router'
 import { useUserStore } from './stores/module/users'
@@ -66,6 +68,7 @@ VueMarkdownEditor.lang.use('en-US', enLocale)
 async function bootstrap() {
   await setupI18n()
   const app = createApp(App)
+  const head = createHead()
   const pinia = createPinia()
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
@@ -75,6 +78,7 @@ async function bootstrap() {
   VMdPreview.use(createEmojiPlugin())
   VMdPreview.use(createTipPlugin())
   app.use(pinia)
+  app.use(head)
   app.use(router)
   app.use(ElementPlus)
   app.use(Vant)
@@ -87,7 +91,7 @@ async function bootstrap() {
   Locale.use('en-US', enUS)
   //app.use(AuthCheckerPlugin)
   const userStore = useUserStore()
-  app.config.globalProperties.$t = i18n.global.t
+  //app.config.globalProperties.$t = i18n.global.t
   app.config.globalProperties.$isLoggedIn = computed(() => userStore.isLogged)
   //app.config.globalProperties.$userData = computed(() => userStore.userData)
   await userStore.loadUserAndToken()

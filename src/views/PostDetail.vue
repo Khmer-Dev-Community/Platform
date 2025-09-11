@@ -148,6 +148,7 @@ import CommentItem from '@/components/CommentItem.vue'
 import VMdEditorViewer from '@kangc/v-md-editor/lib/preview'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
 import { CommentService } from '@/services/comment.service'
+import { useHead } from '@vueuse/head'
 
 const instance = getCurrentInstance()
 const proxy = instance?.proxy
@@ -168,7 +169,8 @@ const formatCount = (num) => {
 
 const addComment = async () => {
   try {
-    if (proxy.$userData?.value?.id == undefined) {
+    console.log(proxy.$userData)
+    if (proxy.$userData?.id == undefined) {
       ElMessageBox({
         title: 'Message',
         message: h('p', null, [h('span', null, 'Please login before you leave comment')]),
@@ -190,10 +192,10 @@ const addComment = async () => {
     if (newCommentText.value.trim() === '') return
     const newComment = {
       post_id: post.value.id,
-      author_id: proxy.$userData.value.id,
+      author_id: proxy.$userData.id,
       content: newCommentText.value.trim(),
       upvotes: 0,
-      author: proxy.$userData.value,
+      author: proxy.$userData,
     }
     const response = await CommentService().createPostComment(post.value.id, newComment)
     post.value.discussion.push(response.data.data)
@@ -213,6 +215,29 @@ const getFeedPostDetail = async () => {
     const response = await PostService().getPostContentBySlug(slug)
     if (response?.data.statusCode === 200) {
       post.value = response.data.data
+      useHead({
+        title: post.value.title + ' | KDC Community',
+        meta: [
+          {
+            name: 'description',
+            content:
+              post.value.description?.slice(0, 150) || 'Join discussions and connect with people.',
+          },
+          { property: 'og:title', content: post.value.title },
+          { property: 'og:description', content: post.value.description?.slice(0, 200) || '' },
+          {
+            property: 'og:image',
+            content: post.value.featured_image_url || post.value.author?.avatar_url,
+          },
+          { name: 'twitter:card', content: 'summary_large_image' },
+          { name: 'twitter:title', content: post.value.title },
+          { name: 'twitter:description', content: post.value.meta?.slice(0, 200) || '' },
+          {
+            name: 'twitter:image',
+            content: post.value.featured_image_url || post.value.author?.avatar_url,
+          },
+        ],
+      })
     }
   } catch (err) {
     console.error(err)
@@ -239,14 +264,14 @@ const handleAddReply = async ({ parentId, replyContent }) => {
   if (replyContent.trim() === '') return
   const newReply = {
     post_id: post.value.id,
-    author_id: proxy.$userData.value.id,
+    author_id: proxy.$userData.id,
     content: replyContent.trim(),
     upvotes: 0,
     parent_comment_id: parentId,
     replies: [],
-    avatar_url: proxy.$userData.value.avatar_url,
+    avatar_url: proxy.$userData.avatar_url,
   }
-  newReply.author = proxy.$userData.value
+  newReply.author = proxy.$userData
 
   const response = await CommentService().createPostComment(post.value.id, newReply)
   const newReplyToSend = response.data.data

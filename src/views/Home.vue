@@ -139,7 +139,8 @@ let slideshowInterval = null
 const totalSlides = Math.ceil(infoCards.value.length / cardsToShow)
 
 const nextSlide = () => {
-  currentIndex.value = (currentIndex.value + 1) % totalSlides
+  if (!infoCards.value || infoCards.value.length === 0) return
+  // normal logic here
 }
 
 const prevSlide = () => {

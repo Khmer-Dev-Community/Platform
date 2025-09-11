@@ -118,7 +118,7 @@
 
       <div class="flex border-b border-gray-200 dark:border-gray-700">
         <button
-          @click="activeTab = 'posts'"
+          @click="navigateToTab('posts')"
           :class="{
             'border-b-2 border-purple-600 text-purple-600 dark:text-purple-400 font-semibold':
               activeTab === 'posts',
@@ -128,7 +128,7 @@
           <i class="fas fa-clipboard-list mr-2"></i> Posts
         </button>
         <button
-          @click="activeTab = 'following'"
+          @click="navigateToTab('following')"
           :class="{
             'border-b-2 border-purple-600 text-purple-600 dark:text-purple-400 font-semibold':
               activeTab === 'following',
@@ -138,7 +138,7 @@
           <i class="fas fa-users mr-2"></i> Following
         </button>
         <button
-          @click="activeTab = 'liked'"
+          @click="navigateToTab('liked')"
           :class="{
             'border-b-2 border-purple-600 text-purple-600 dark:text-purple-400 font-semibold':
               activeTab === 'liked',
@@ -148,7 +148,7 @@
           <i class="fas fa-heart mr-2"></i> Liked
         </button>
         <button
-          @click="((activeTab = 'save'), handleGetsavePost())"
+          @click="navigateToTab('save')"
           :class="{
             'border-b-2 border-purple-600 text-purple-600 dark:text-purple-400 font-semibold':
               activeTab === 'save',
@@ -170,7 +170,7 @@
                 :key="post.id"
                 :id="post.id"
                 :title="post.title"
-                :content="post.description"
+                :content="post?.meta"
                 :featured="post.featured_image_url"
                 :tags="post.tags"
                 :date="proxy.$timeAgo(post.created_at)"
@@ -182,6 +182,8 @@
                 :post="post"
                 :owner="isOwnProfile"
                 :isSave="false"
+                :author="post.author.first_name"
+                :author_profile="post.author.avatar_url"
               />
 
               <button
@@ -214,7 +216,7 @@
             :key="i.post.id"
             :id="i.post.id"
             :title="i.post.title"
-            :content="i.post.description"
+            :content="i.post.meta"
             :featured="i.post.featured_image_url"
             :tags="i.post.tags"
             :date="proxy.$timeAgo(i.post.created_at)"
@@ -226,6 +228,9 @@
             :post="i.post"
             :owner="isOwnProfile"
             :isSaved="true"
+            @remove-post="removePost"
+            :author="i.post.author.first_name"
+            :author_profile="i.post.author.avatar_url"
           />
 
           <button
@@ -310,7 +315,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect, reactive, onMounted, getCurrentInstance } from 'vue'
+import { ref, computed, watchEffect, reactive, onMounted, getCurrentInstance, watch } from 'vue'
 import { useUserStore, type UserData } from '@/stores/module/users'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -325,7 +330,7 @@ const { proxy } = getCurrentInstance()
 const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
-const activeTab = ref('posts')
+const activeTab = computed(() => route.params.active || 'posts')
 const userProfile = ref<UserData>({} as UserData)
 const openMenuId = ref<number | null>(null)
 // Dialog and Form State
@@ -368,10 +373,19 @@ const handleGetProfile = async () => {
     }
   }
 }
-
+const navigateToTab = (active: string) => {
+  router.push({
+    name: 'profile-active',
+    params: {
+      username: route.params.username,
+      active: active,
+    },
+  })
+}
 // Get Post Profile
 const handleGetPostcontent = async () => {
   const username: any = route.params.username
+
   if (!username) {
     ElMessage.error('Username not found in route parameters.')
     return
@@ -416,6 +430,17 @@ const handleGetsavePost = () => {
         ElMessage.error('Failed to load user profile.')
       }
     })
+}
+const removePost = (event: any) => {
+  console.log('Type of event.postId:', typeof event?.postId)
+  const index = savePosts.value.findIndex((p) => p.post_id === event?.postId)
+  console.log('Index found:', index)
+  if (index !== -1) {
+    savePosts.value.splice(index, 1)
+    console.log('Post successfully removed.')
+  } else {
+    console.log('Post not found in array. It may have already been removed.')
+  }
 }
 const handlePostAction = ({ type, postId }: { type: string; postId: number }) => {
   console.log(`Parent received action: ${type} for post ID: ${postId}`)
@@ -465,7 +490,17 @@ const handleCloseDialog = () => {
       // User cancelled closing the dialog
     })
 }
-// Watch for route changes to fetch new profile data
+
+// Watch for route
+watch(
+  activeTab,
+  (newTab) => {
+    if (newTab === 'save') {
+      handleGetsavePost()
+    }
+  },
+  { immediate: true },
+)
 watchEffect(() => {
   handleGetProfile()
 })

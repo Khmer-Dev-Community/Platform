@@ -143,12 +143,12 @@
               >
                 Profile
               </router-link>
-              <button
+              <div
                 @click="AppLogout"
                 class="block w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 Logout
-              </button>
+              </div>
             </div>
           </div>
           <div
@@ -234,7 +234,7 @@
           </button>
         </div>
         <div class="flex lg:hidden">
-          <button @click="toggleMenu" class="text-gray-700 focus:outline-none">
+          <button class="text-gray-700 focus:outline-none">
             <svg
               class="w-6 h-6"
               xmlns="http://www.w3.org/2000/svg"
@@ -270,7 +270,6 @@
           <router-link to="/">
             <img src="@/assets/kdc.png" width="120" class="-mt-2" />
           </router-link>
-          {{ $appThem }}
         </div>
       </template>
       <template #right>
@@ -324,12 +323,12 @@
               >
                 Profile
               </router-link>
-              <button
+              <div
                 @click="AppLogout"
                 class="block w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 Logout
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -348,13 +347,13 @@
           title="Profile "
           class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
         >
-          <button
+          <div
             @click="AppLogout"
             class="block w-full text-left px-3 py-2 text-sm cursor-pointer transition duration-300 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
           >
             <van-icon name="close" />
             Sign Out
-          </button>
+          </div>
         </van-cell>
       </van-cell-group>
     </van-popup>
@@ -368,24 +367,21 @@ import { useI18n } from 'vue-i18n'
 import { Storage } from '@capacitor/storage'
 import { showNotify } from 'vant'
 import { useThemeStore } from '@/stores/theme'
-import { useUserStore, type UserData } from '@/stores/module/users'
+import { useUserStore } from '@/stores/module/users'
 import { Search, Moon, Sunny, Plus } from '@element-plus/icons-vue'
 import Cookies from 'universal-cookie'
+import { AuthService } from '@/services/auth.service'
 
 const emit = defineEmits(['open-search-dialog'])
 const cookies = new Cookies(null, { path: '' })
 const instance = getCurrentInstance()
-const $isLoggedIn = computed<boolean>(
-  () => instance?.appContext.config.globalProperties.$isLoggedIn?.value ?? false,
-)
-const $userData = computed<UserData | null>(
-  () => instance?.appContext.config.globalProperties.$userData?.value ?? null,
-)
+const userStore = useUserStore()
+const $isLoggedIn = computed(() => userStore.isLogged)
+const $userData = computed(() => userStore.userData)
 
 const { t, locale } = useI18n()
 const router = useRouter()
 const themeStore = useThemeStore()
-const userStore = useUserStore()
 
 const isDark = computed(() => themeStore.isDark)
 
@@ -463,10 +459,19 @@ const selectLanguage = async (langCode: string) => {
 }
 
 const AppLogout = async () => {
-  cookies.remove('kdc.secure.token', { path: '/' })
-  await userStore.clearUser()
+  //
+  AuthService()
+    .AuthLogout()
+    .then(async (data) => {
+      console.log(data)
+      await Storage.remove({ key: 'islogged' })
+      await Storage.remove({ key: 'userData' })
+      cookies.remove('kdc.secure.token', { path: '/' })
+    })
+  //
   showNotify({ type: 'success', message: 'Logout successful!' })
-  //router.push('/login')
+  userStore.isLogged = false
+  //router.push('/')
   dropDownprofile.value = false
 }
 

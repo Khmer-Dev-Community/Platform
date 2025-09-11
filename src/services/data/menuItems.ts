@@ -23,7 +23,13 @@ export const navItems = [
     route: '/notification',
     tag: 'welcome',
   },
-  { text: 'Members', icon: 'fas fa-user-friends', active: false, route: '/member', tag: 'welcome' },
+  {
+    text: 'Members',
+    icon: 'fas fa-user-friends',
+    active: false,
+    route: '/member',
+    tag: 'community',
+  },
 
   {
     text: 'Discussions',
