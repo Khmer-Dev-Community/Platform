@@ -4,12 +4,14 @@
     class="flex hidden flex-col min-h-[90vh] bg-white dark:bg-gray-700 dark:text-white rounded-md space-y-1 p-2 -ml-5 text-gray-700 text-sm font-normal select-none"
   >
     <SidebarNavItem v-for="item in HomeNavItems" :key="item.text" :item="item" />
-    <el-title class="text-base font-semibold" tag="b"> Welcome</el-title>
-    <SidebarNavItem v-for="item in WelcomNavItems" :key="item.text" :item="item" class="mt-2" />
-    <el-title v-if="userStore.isLogged" class="text-base font-semibold" tag="b">
-      Community</el-title
-    >
+    <el-title v-if="$isLoggedIn" class="text-base font-semibold" tag="b"> Welcome</el-title>
+    <span v-if="$isLoggedIn">
+      <SidebarNavItem v-for="item in WelcomNavItems" :key="item.text" :item="item" class="mt-១"
+    /></span>
+
+    <el-title class="text-base font-semibold" tag="b"> Community</el-title>
     <SidebarNavItem v-for="item in communityNavItems" :key="item.text" :item="item" />
+
     <el-title class="text-base font-semibold" tag="b"> Product Updates</el-title>
     <SidebarNavItem v-for="item in releaseNavItems" :key="item.text" :item="item" />
 
@@ -38,7 +40,7 @@ const props = defineProps({
 
 const filteredNavItems = computed(() => {
   // Check if $userData exists and has an ID
-  if (!proxy.$userData || !proxy.$userData.id) {
+  if (!userStore.isLogged || !userStore.userData.id) {
     return props.navItems.filter((item) => item.route !== '@me')
   }
   return props.navItems

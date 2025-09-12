@@ -15,7 +15,7 @@
         >
           <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
             <button
-              v-if="owner"
+              v-if="owner && userStore.isLogged"
               @click="EditPost"
               class="w-full text-left px-4 py-2 cursor-pointer hover:bg-gray-100 text-xs text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
               role="menuitem"
@@ -23,7 +23,7 @@
               <i class="fas fa-edit mr-2"></i> Edit
             </button>
             <button
-              v-if="owner"
+              v-if="owner && userStore.isLogged"
               @click="action('delete')"
               class="w-full text-left px-4 py-2 cursor-pointer hover:bg-gray-100 text-xs text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
               role="menuitem"
@@ -104,11 +104,11 @@ import { defineProps, defineEmits, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
 import PostActions from '@/components/PostAction.vue'
-import { showToast } from 'vant'
-import { SavePostService } from '@/services/saved.post.service'
 
+import { useUserStore } from '@/stores/module/users'
 const selectedPostStore = useSelectedPostStore()
 const { proxy } = getCurrentInstance()
+const userStore = useUserStore()
 const router = useRouter()
 const props = defineProps({
   author: {

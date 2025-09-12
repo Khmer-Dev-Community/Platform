@@ -3,7 +3,7 @@
     <div class="max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-none overflow-hidden">
       <div class="p-6 border-b border-gray-200 dark:border-gray-700 relative">
         <button
-          v-if="isOwnProfile"
+          v-if="isOwnProfile && userStore.isLogged"
           @click="openEditProfileDialog"
           class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
@@ -25,7 +25,7 @@
         </div>
 
         <button
-          v-if="isOwnProfile"
+          v-if="isOwnProfile && userStore.isLogged"
           @click="openEditProfileDialog"
           class="bg-gray-200 dark:bg-gray-900 hover:bg-gray-500 text-blue dark:text-white font-semibold py-1 px-4 rounded-full text-sm transition-colors mb-2"
         >
@@ -211,33 +211,35 @@
 
         <div v-if="activeTab === 'save'">
           <h3 class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-50">Post Saved</h3>
-          <PostlistCard
-            v-for="(i, index) in savePosts"
-            :key="i.post.id"
-            :id="i.post.id"
-            :title="i.post.title"
-            :content="i.post.meta"
-            :featured="i.post.featured_image_url"
-            :tags="i.post.tags"
-            :date="proxy.$timeAgo(i.post.created_at)"
-            :upvotes="proxy.$formatCount(i.post.view_count)"
-            :comments="i.post.comments"
-            :isOpen="openMenuId === i.post.id"
-            @toggle-menu="handleToggleMenu"
-            @action="handlePostAction"
-            :post="i.post"
-            :owner="isOwnProfile"
-            :isSaved="true"
-            @remove-post="removePost"
-            :author="i.post.author.first_name"
-            :author_profile="i.post.author.avatar_url"
-          />
+          <span v-if="userStore.isLogged">
+            <PostlistCard
+              v-for="(i, index) in savePosts"
+              :key="i.post.id"
+              :id="i.post.id"
+              :title="i.post.title"
+              :content="i.post.meta"
+              :featured="i.post.featured_image_url"
+              :tags="i.post.tags"
+              :date="proxy.$timeAgo(i.post.created_at)"
+              :upvotes="proxy.$formatCount(i.post.view_count)"
+              :comments="i.post.comments"
+              :isOpen="openMenuId === i.post.id"
+              @toggle-menu="handleToggleMenu"
+              @action="handlePostAction"
+              :post="i.post"
+              :owner="isOwnProfile"
+              :isSaved="true"
+              @remove-post="removePost"
+              :author="i.post.author.first_name"
+              :author_profile="i.post.author.avatar_url"
+            />
 
-          <button
-            class="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            Show more
-          </button>
+            <button
+              class="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Show more
+            </button>
+          </span>
         </div>
       </div>
     </div>
@@ -248,6 +250,7 @@
       :before-close="handleCloseDialog"
       custom-class="dark:bg-gray-800 dark:text-gray-100 profile-dialog"
       :show-close="false"
+      v-if="isOwnProfile && userStore.isLogged"
     >
       <template #header="{ close, titleId, titleClass }">
         <div class="flexr">

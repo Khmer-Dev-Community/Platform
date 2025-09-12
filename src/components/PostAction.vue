@@ -25,6 +25,7 @@
         <span>Share</span>
       </span>
       <span
+        v-if="userStore.isLogged"
         class="flex items-center text-xs space-x-1 hover:text-blue-500 bg-gray-200 px-2 py-1 dark:hover:text-blue-400 transition-colors rounded-full block cursor-pointer hover:bg-gray-100 dark:bg-gray-700"
       >
         <span v-if="!saved" @click.stop="handleToggleBookmark"
@@ -69,11 +70,12 @@ import { ReactionService } from '@/services/reaction.service'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
 import { useRouter } from 'vue-router'
 import { SavePostService } from '@/services/saved.post.service'
+import { useUserStore } from '../stores/module/users'
 
 const { proxy } = getCurrentInstance()
 const selectedPostStore = useSelectedPostStore()
 const router = useRouter()
-
+const userStore = useUserStore()
 const props = defineProps({
   post: {
     type: Object,
@@ -168,7 +170,7 @@ const handleToggleBookmark = async () => {
   try {
     const data = {
       post_id: props.post.id,
-      username: proxy?.$userData.username,
+      username: userStore.userData.username,
     }
     await SavePostService().createSavePost(props.post.id, data)
     if (props.saved) {

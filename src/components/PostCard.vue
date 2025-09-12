@@ -98,12 +98,13 @@ import PostActions from '@/components/PostAction.vue'
 import { useRouter } from 'vue-router'
 import { useSelectedPostStore } from '@/stores/emit/post.emit'
 import { showToast } from 'vant'
+import { useUserStore } from '@/stores/module/users'
 
 const { proxy } = getCurrentInstance()
 const selectedPostStore = useSelectedPostStore()
 const router = useRouter()
 const showShare = ref(false)
-
+const userStore = useUserStore()
 const shareData = {
   title: '',
   description: '',
@@ -153,14 +154,14 @@ const props = defineProps({
     }),
   },
 })
-
+const $userData = computed(() => userStore.userData)
 // === NEW: Computed property to check if the current user has reacted ===
 const hasUserReacted = computed(() => {
   // Use optional chaining to safely access nested properties
   if (!props.post?.reaction) {
     return false
   }
-  return props.post.reaction.some((react) => react.user_id === proxy.$userData.id)
+  return props.post.reaction.some((react) => react.user_id === userStore.userData.id)
 })
 
 const selectPost = (post) => {

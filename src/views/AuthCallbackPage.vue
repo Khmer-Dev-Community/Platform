@@ -28,6 +28,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/module/users'
 import { AuthService } from '@/services/auth.service'
+import { showToast } from 'vant'
 
 const router = useRouter()
 const route = useRoute()
@@ -50,7 +51,7 @@ onMounted(async () => {
     AuthService()
       .AuthProfile()
       .then(async (response) => {
-        console.log(response.data)
+        showToast('Logged!')
         if ((response.data.statusCode = 200)) {
           userStore.setUser(response.data.data)
           userStore.isLogged = true

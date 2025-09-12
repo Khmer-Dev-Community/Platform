@@ -365,7 +365,7 @@ import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Storage } from '@capacitor/storage'
-import { showNotify } from 'vant'
+import { showNotify, showToast } from 'vant'
 import { useThemeStore } from '@/stores/theme'
 import { useUserStore } from '@/stores/module/users'
 import { Search, Moon, Sunny, Plus } from '@element-plus/icons-vue'
@@ -468,8 +468,7 @@ const AppLogout = async () => {
       await Storage.remove({ key: 'userData' })
       cookies.remove('kdc.secure.token', { path: '/' })
     })
-  //
-  showNotify({ type: 'success', message: 'Logout successful!' })
+  showToast('Logout!')
   userStore.isLogged = false
   //router.push('/')
   dropDownprofile.value = false
